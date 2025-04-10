@@ -1,10 +1,10 @@
 package controller;
 
-import model.*;
-import GeneratorController;
+import model.User;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 public class AuthController {
     private static final String user_details = "";
@@ -13,10 +13,10 @@ public class AuthController {
         try{
             BufferedReader reader = new BufferedReader(new FileReader(user_details));
             String line = "";
-            while(line = reader.readLine() != null){
+            while((line = reader.readLine()) != null){
                 String[] details = line.split(",");
                 if(details[1].equals(username) && details[2].equals(password)){
-                    switch (details[0].substring(0, 2){
+                    switch (details[0].substring(0, 2)){
                         case "AM" :
                             break;
                         case "SM":
@@ -27,7 +27,7 @@ public class AuthController {
                             break;
                         case "FM":
                             break;
-                        case default:
+                        default:
                             break;
                     }
                 }
@@ -48,16 +48,16 @@ public class AuthController {
             String updatedAt = createdAt;
 
             GeneratorController idGenerator = new GeneratorController(user_details);
-            HashMap<String, String> newId = idGenerator.getLastUserIdByRole();
+            Map<String, String> newId = idGenerator.getLastUserIdByRole();
 
-            String userId;
+            String userId = null;
             if(newId.containsKey(role)){
                 String lastId = newId.get(role);
                 int numericPart = Integer.parseInt(lastId.substring(2));
                 userId = String.format("%s%03d", role, numericPart + 1);
             }
 
-//            User user;
+            User user = null;
 //            switch(role){
 //                case "AM":
 //                    user = new Admin(userId, username, password, firstName, lastName, createdAt, updatedAt);

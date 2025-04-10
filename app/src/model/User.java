@@ -1,6 +1,6 @@
 package model;
 
-public abstract class user {
+public abstract class User {
     protected String userID;
     protected String username;
     protected String password;
@@ -9,7 +9,7 @@ public abstract class user {
     protected String createdAt;
     protected String updatedAt;
 
-    public user(String userID, String username, String password, String firstName, String lastName, String createdAt, String updatedAt) {
+    public User(String userID, String username, String password, String firstName, String lastName, String createdAt, String updatedAt) {
         this.userID = userID;
         this.username = username;
         this.password = password;
