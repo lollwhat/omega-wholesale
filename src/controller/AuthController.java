@@ -1,13 +1,14 @@
 package controller;
 
-import model.User;
+import model.*;
+import view.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
 public class AuthController {
-    private static final String user_details = "";
+    private static final String user_details = "data/user_details.txt";
 
     public User login(String username, String password){
         try{
@@ -15,10 +16,20 @@ public class AuthController {
             String line = "";
             while((line = reader.readLine()) != null){
                 String[] details = line.split(",");
-                if(details[1].equals(username) && details[2].equals(password)){
-                    switch (details[0].substring(0, 2)){
-                        case "AM" :
-                            break;
+                if(details[1].trim().equals(username) && details[2].trim().equals(password)){
+                    String userId = details[0].trim();
+                    String firstName = details[3].trim();
+                    String lastName = details[4].trim();
+                    String createdAt = details[5].trim();
+                    String updatedAt = details[6].trim();
+                    String roleCode = userId.substring(0, 2);
+
+                    User user;
+                    switch (roleCode) {
+                        case "AM":
+                            user = new Admin(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                            reader.close();
+                            return user;
                         case "SM":
                             break;
                         case "PM":
@@ -32,12 +43,29 @@ public class AuthController {
                     }
                 }
             }
-            reader.close();
         }catch(IOException e){
             System.out.println("Error reading user data: " + e.getMessage());
         }
-
         return null;
+    }
+
+    public void openDashboard(User user){
+        String roleCode = user.getUserID().substring(0, 2);
+        switch (roleCode){
+            case "AM" :
+//              AdminDashboardView();
+                break;
+            case "SM":
+                break;
+            case "PM":
+                break;
+            case "IM":
+                break;
+            case "FM":
+                break;
+            default:
+                break;
+        }
     }
 
     public User createUser(String role, String username, String password, String firstName, String lastName){
@@ -90,5 +118,9 @@ public class AuthController {
             System.out.println("Error reading user data: " + e.getMessage());
             return null;
         }
+    }
+
+    public void displayLoginMenu(){
+        LoginView loginView = new LoginView(this);
     }
 }
