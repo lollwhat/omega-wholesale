@@ -31,7 +31,9 @@ public class AuthController {
                             reader.close();
                             return user;
                         case "SM":
-                            break;
+                            user = new SalesManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                            reader.close();
+                            return user;
                         case "PM":
                             break;
                         case "IM":
@@ -56,7 +58,7 @@ public class AuthController {
 //              AdminDashboardView();
                 break;
             case "SM":
-                break;
+                SalesManagerView SalesManager = new SalesManagerView();
             case "PM":
                 break;
             case "IM":
@@ -122,5 +124,6 @@ public class AuthController {
 
     public void displayLoginMenu(){
         LoginView loginView = new LoginView(this);
+
     }
 }
