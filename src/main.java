@@ -7,4 +7,4 @@ public class main {
         AuthController authController = new AuthController();
         authController.displayLoginMenu();
     }
-
+}
