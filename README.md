@@ -45,7 +45,7 @@ d. Push to remote(GitHub):
 git push origin HEAD
 ```
 <br><br>
-## 3. Pull & Merge - Get the latest changes
+### 3. Pull & Merge - Get the latest changes
 Whenever need to merge dev to your branch (to update your branch to newest version
 <br><br>
 a. Go to local dev branch:
