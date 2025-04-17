@@ -8,15 +8,19 @@ a. Clone the Repo
 ```bash
 git clone https://github.com/lollwhat/omega-wholesale.git
 ```
-b. Go to dev branch:
+b. Go to folder directory:
+```bash
+cd omega-wholesale
+```
+c. Go to dev branch:
 ```bash
 git checkout dev
 ```
-c. Create and go to your branch:
+d. Create and go to your branch:
 ```bash
 git checkout -b <ur-branch>
 ```
-d. Push and create your branch in remote(GitHub):
+e. Push and create your branch in remote(GitHub):
 ```bash
 git push -u origin <ur-branch>
 ```
