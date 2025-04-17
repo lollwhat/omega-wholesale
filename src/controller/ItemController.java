@@ -20,7 +20,7 @@ public class ItemController {
     private String updatedBy;
     private String itemDetailsFile = "data/item_details.txt";
 
-    public void ItemController(String itemId, String itemName, int quantity, String unit, String supplierId){
+    public ItemController(String itemId, String itemName, int quantity, String unit, String supplierId){
         // Constructor
         this.itemId = itemId;
         this.itemName = itemName;
@@ -42,8 +42,8 @@ public class ItemController {
             reader.close();
             return items.toString();
         } catch (Exception e) {
-            return "Error occurs: "+e.getMessage();
-
+            return "Error occurs: " + e.getMessage();
+        }
     }
 
     public void addItem() {
