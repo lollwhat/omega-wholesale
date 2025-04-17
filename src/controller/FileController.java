@@ -32,7 +32,7 @@ public class FileController {
         return null;
     }
 
-    public List<String> getFile(){
+    public static List<String> getFile(){
         readFile();
         return fileLines;
     }
