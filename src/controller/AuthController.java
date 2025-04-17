@@ -12,7 +12,7 @@ public class AuthController {
     FileController user_details = new FileController("data/user_details.txt");
 
     public User login(String username, String password){
-        List<String> userData = FileController.readFile();
+        List<String> userData = FileController.getFile();
         for (String line : userData) {
             String[] details = line.split(",");
             if (details[1].trim().equals(username) && details[2].trim().equals(password)) {
