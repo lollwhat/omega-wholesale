@@ -10,6 +10,7 @@ import java.util.Map;
 
 public class AuthController {
     FileController user_details = new FileController("data/user_details.txt");
+    private SessionController sessionManager = SessionController.getInstance();
 
     public User login(String username, String password){
         List<String> userData = FileController.getFile();
@@ -23,14 +24,14 @@ public class AuthController {
                 String updatedAt = details[6].trim();
                 String roleCode = userId.substring(0, 2);
 
-                User user;
+                User user = null;
                 switch (roleCode) {
                     case "AM":
                         user = new Admin(userId, username, password, firstName, lastName, createdAt, updatedAt);
-                        return user;
+                        break;
                     case "SM":
                         user = new SalesManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
-                        return user;
+                        break;
                     case "PM":
                         break;
                     case "IM":
@@ -39,6 +40,12 @@ public class AuthController {
                         break;
                     default:
                         break;
+                }
+
+                // Set the current user in the session manager
+                if(user != null){
+                    sessionManager.setCurrentUser(user);
+                    return user;
                 }
             }
         }
@@ -113,6 +120,11 @@ public class AuthController {
 
     public void displayLoginMenu(){
         LoginView loginView = new LoginView(this);
-
     }
+
+    public void logout() {
+        sessionManager.logout();
+        displayLoginMenu();
+    }
+
 }
