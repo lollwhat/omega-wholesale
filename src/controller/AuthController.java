@@ -33,11 +33,11 @@ public class AuthController {
                         user = new SalesManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                         break;
                     case "PM":
-                        break;
+                        user = new PurchaseManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                     case "IM":
-                        break;
+                        user = new InventoryManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                     case "FM":
-                        break;
+                        user = new FinanceManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                     default:
                         break;
                 }
