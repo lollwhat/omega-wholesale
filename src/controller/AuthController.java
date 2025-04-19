@@ -56,7 +56,7 @@ public class AuthController {
         String roleCode = user.getUserID().substring(0, 2);
         switch (roleCode){
             case "AM" :
-//              AdminDashboardView();
+                new AdminView(user);
                 break;
             case "SM":
                 SalesManagerView SalesManager = new SalesManagerView();
