@@ -3,17 +3,17 @@ package model;
 import view.SalesManagerView;
 
 public enum RoleName {
-    Admin,
+    Administrator,
     SalesManager,
     PurchaseManager,
     InventoryManager,
     FinanceManager;
 
 
-    public String getRoleName(String roleCode) {
+    public static String getRoleName(String roleCode) {
         switch (roleCode){
             case "AM" :
-                return Admin.name();
+                return Administrator.name();
             case "SM":
                 return SalesManager.name();
             case "PM":
