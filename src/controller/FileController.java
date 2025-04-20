@@ -102,7 +102,7 @@ public class FileController {
         updatedLines = new ArrayList<>();
         String[] updatedData = updatedLine.split(",");
         for (String line : fileLines) {
-            String[] data = line.split("=");
+            String[] data = line.split(",");
             if (updatedData[0].equals(data[0])) {
                 updatedLines.add(updatedLine);
             } else {
@@ -143,7 +143,7 @@ public class FileController {
             for (String line : updatedLines) {
                 fileWriter.write(line + "\n");
             }
-            System.out.println("Data deketed successfully.");
+            System.out.println("Data deleted successfully.");
         } catch (IOException e) {
             System.err.println("IOException caught: " + e.getMessage());
         } finally {
