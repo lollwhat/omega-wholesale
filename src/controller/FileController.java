@@ -133,7 +133,7 @@ public class FileController {
         readFile();
         updatedLines = new ArrayList<>();
         for (String line : fileLines) {
-            String[] data = line.split("=");
+            String[] data = line.split(",");
             if (!dataId.equals(data[index])) {
                 updatedLines.add(line);
             }
