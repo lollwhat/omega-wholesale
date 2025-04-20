@@ -1,0 +1,2 @@
+PO001, 2023-10-05, PR002, Tablet, 30, Tech Solutions Inc., Pending, purchase, Pending
+PO002, 2023-10-06, Direct, Monitor, 15, Computer Accessories Ltd., Approved, purchase, finance

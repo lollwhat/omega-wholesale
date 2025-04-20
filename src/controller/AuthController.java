@@ -39,7 +39,9 @@ public class AuthController {
                         case "IM":
                             break;
                         case "FM":
-                            break;
+                            user = new FinanceManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                            reader.close();
+                            return user;
                         default:
                             break;
                     }
@@ -64,7 +66,8 @@ public class AuthController {
             case "IM":
                 break;
             case "FM":
-                break;
+                new FinanceManagerView();
+                return;
             default:
                 break;
         }
