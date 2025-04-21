@@ -1,19 +1,21 @@
 package controller;
 
+import model.Item;
+
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Date;
 
 public class ItemController {
-    private String itemId;
-    private String itemName;
-    private int quantity;
-    private String supplierId;
-    private String unit;
-    private String createdAt;
-    private String updatedAt;
-    private String createdBy;
-    private String updatedBy;
+//    private String itemId;
+//    private String itemName;
+//    private int quantity;
+//    private String supplierId;
+//    private String unit;
+//    private String createdAt;
+//    private String updatedAt;
+//    private String createdBy;
+//    private String updatedBy;
     private String itemDetailsFile = "data/item_details.txt";
     private FileController fileController = new FileController(itemDetailsFile);
 
@@ -54,16 +56,12 @@ public class ItemController {
     public void addItem(String itemName, int quantity, String unit, String supplierId) {
         try {
             int tempItemId = fileController.getFile().size()+1;
-            this.itemId = "IM" + String.format("%03d", tempItemId);
-            this.itemName = itemName;
-            this.quantity = quantity;
-            this.unit = unit;
-            this.supplierId = supplierId;
-            this.createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            this.updatedAt = createdAt;
-            this.createdBy = SessionController.getInstance().getUserId();
-            this.updatedBy = SessionController.getInstance().getUserId();
-            String data = String.join(",", itemId, itemName, String.valueOf(quantity), unit, supplierId, createdAt, updatedAt, createdBy, updatedBy);
+            String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            String updatedAt = createdAt;
+            String createdBy = SessionController.getInstance().getUserId();
+            String updatedBy = SessionController.getInstance().getUserId();
+            Item item = new Item("IM" + String.format("%03d", tempItemId), itemName, quantity, unit, supplierId, createdAt, updatedAt, createdBy, updatedBy);
+            String data = item.toCSV();
             fileController.appendFile(data);
             System.out.println("Item added successfully");
         }
@@ -80,17 +78,16 @@ public class ItemController {
                 System.out.println("Item not found");
                 return;
             }
-            this.itemId = itemId;
-            this.itemName = (itemName != null) ? itemName : existingItemDetails[1];
-            this.quantity = (quantity != 0) ? quantity : Integer.parseInt(existingItemDetails[2]);
-            this.unit = (unit != null) ? unit : existingItemDetails[3];
-            this.supplierId = (supplierId != null) ? supplierId : existingItemDetails[4];
-            this.createdAt = existingItemDetails[5];
-            this.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            this.createdBy = existingItemDetails[7];
-            this.updatedBy = SessionController.getInstance().getUserId();
+            Item item = new Item(itemId, existingItemDetails[1], Integer.parseInt(existingItemDetails[2]), existingItemDetails[3], existingItemDetails[4], existingItemDetails[5], existingItemDetails[6], existingItemDetails[7], existingItemDetails[8]);
+            item.setItemName((itemName != null) ? itemName : existingItemDetails[1]);
+            item.setQuantity((quantity != 0) ? quantity : Integer.parseInt(existingItemDetails[2]));
+            item.setUnit((unit != null) ? unit : existingItemDetails[3]);
+            item.setSupplierId((supplierId != null) ? supplierId : existingItemDetails[4]);
+            item.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+            item.setUpdatedBy(SessionController.getInstance().getUserId());
 
-            String data = String.join(",", this.itemId, this.itemName, String.valueOf(this.quantity), this.unit, this.supplierId, createdAt, updatedAt, createdBy, updatedBy);
+
+            String data = item.toCSV();
             fileController.updateFile(data);
             System.out.println("Item updated successfully");
         }
