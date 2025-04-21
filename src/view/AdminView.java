@@ -139,14 +139,25 @@ public class AdminView extends JFrame {
         mainPanel.setBackground(mediumBlue);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Dashboard header
+        JPanel headerPanel = createHeaderPanel("Dashboard");
+
+        // Default content panel
+        JPanel contentPanel = createDefaultContentPanel(username, userID);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createHeaderPanel(String title){
         // Dashboard header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(mediumBlue);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel dashboardLabel = new JLabel("Dashboard");
-        dashboardLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        dashboardLabel.setForeground(textWhite);
+        JLabel headerLabel = new JLabel(title);
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        headerLabel.setForeground(textWhite);
 
         // Date label on the right
         LocalDate currentDate = LocalDate.now();
@@ -155,14 +166,10 @@ public class AdminView extends JFrame {
         dateLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         dateLabel.setForeground(textWhite);
 
-        headerPanel.add(dashboardLabel, BorderLayout.WEST);
+        headerPanel.add(headerLabel, BorderLayout.WEST);
         headerPanel.add(dateLabel, BorderLayout.EAST);
 
-        // Default content panel
-        JPanel contentPanel = createDefaultContentPanel(username, userID);
-
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        return headerPanel;
     }
 
     private JPanel createDefaultContentPanel(String username, String userID) {
