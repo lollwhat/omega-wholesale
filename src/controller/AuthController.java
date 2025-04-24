@@ -34,10 +34,11 @@ public class AuthController {
                         break;
                     case "PM":
                         user = new PurchaseManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                        break;
                     case "IM":
-                        user = new InventoryManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                        break;
                     case "FM":
-                        user = new FinanceManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                        break;
                     default:
                         break;
                 }
@@ -56,11 +57,13 @@ public class AuthController {
         String roleCode = user.getUserID().substring(0, 2);
         switch (roleCode){
             case "AM" :
-                new AdminView(user);
+//              AdminDashboardView();
                 break;
             case "SM":
                 SalesManagerView SalesManager = new SalesManagerView();
+                break;
             case "PM":
+                PurchaseManagerView PurchaseManager = new PurchaseManagerView(user);
                 break;
             case "IM":
                 break;
@@ -128,3 +131,4 @@ public class AuthController {
     }
 
 }
+
