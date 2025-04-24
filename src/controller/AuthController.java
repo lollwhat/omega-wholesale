@@ -33,6 +33,7 @@ public class AuthController {
                         user = new SalesManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                         break;
                     case "PM":
+                        user = new PurchaseManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                         break;
                     case "IM":
                         break;
@@ -60,7 +61,9 @@ public class AuthController {
                 break;
             case "SM":
                 SalesManagerView SalesManager = new SalesManagerView();
+                break;
             case "PM":
+                PurchaseManagerView PurchaseManager = new PurchaseManagerView(user);
                 break;
             case "IM":
                 break;
@@ -128,3 +131,4 @@ public class AuthController {
     }
 
 }
+
