@@ -1,0 +1,5 @@
+SUP001,Seeder Supplier A,Seeder PIC A,Seeder Description A,Seeder Address A,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
+SUP002,Seeder Supplier B,Seeder PIC B,Seeder Description B,Seeder Address B,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
+SUP003,Seeder Supplier C,Seeder PIC C,Seeder Description C,Seeder Address C,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
+SUP004,Seeder Supplier D,Seeder PIC D,Seeder Description D,Seeder Address D,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
+SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
