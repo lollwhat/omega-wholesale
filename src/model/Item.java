@@ -8,17 +8,19 @@ public class Item {
     private int quantity;
     private String supplierId;
     private String unit;
+    private String unitPrice;
     private String createdAt;
     private String updatedAt;
     private String createdBy;
     private String updatedBy;
 
-    public Item(String itemId, String itemName, int quantity, String supplierId, String unit, String createdAt, String updatedAt, String createdBy, String updatedBy) {
+    public Item(String itemId, String itemName, int quantity, String supplierId, String unit, String unitPrice, String createdAt, String updatedAt, String createdBy, String updatedBy) {
         this.itemId = itemId;
         this.itemName = itemName;
         this.quantity = quantity;
         this.supplierId = supplierId;
         this.unit = unit;
+        this.unitPrice = unitPrice;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.createdBy = createdBy;
@@ -28,7 +30,6 @@ public class Item {
     public String getItemId() {
         return itemId;
     }
-
     public void setItemId(String itemId) {
         this.itemId = itemId;
     }
@@ -36,7 +37,6 @@ public class Item {
     public String getItemName() {
         return itemName;
     }
-
     public void setItemName(String itemName) {
         this.itemName = itemName;
     }
@@ -44,7 +44,6 @@ public class Item {
     public int getQuantity() {
         return quantity;
     }
-
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
@@ -52,7 +51,6 @@ public class Item {
     public String getSupplierId() {
         return supplierId;
     }
-
     public void setSupplierId(String supplierId) {
         this.supplierId = supplierId;
     }
@@ -60,45 +58,25 @@ public class Item {
     public String getUnit() {
         return unit;
     }
+    public void setUnit(String unit) { this.unit = unit; }
 
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
+    public String getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(String unitPrice) { this.unitPrice = unitPrice; }
 
-    public String getCreatedAt() {
-        return createdAt;
-    }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
+    public String getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
 
-    public String getUpdatedAt() {
-        return updatedAt;
-    }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
-    public void setUpdatedAt(String updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
-
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String toCSV() {
-        return String.join(",", itemId, itemName, String.valueOf(quantity), supplierId, unit, createdAt, updatedAt, createdBy, updatedBy);
+        return String.join(",", itemId, itemName, String.valueOf(quantity), supplierId, unit, unitPrice, createdAt, updatedAt, createdBy, updatedBy);
     }
 
     public String toJSON() {
@@ -107,6 +85,7 @@ public class Item {
                 "\"itemName\": \"" + itemName + "\"," +
                 "\"quantity\": " + quantity + "," +
                 "\"unit\": \"" + unit + "\"," +
+                "\"unitPrice\": \"" + unitPrice + "\"," +
                 "\"supplierId\": \"" + supplierId + "\"," +
                 "\"createdAt\": \"" + createdAt + "\"," +
                 "\"updatedAt\": \"" + updatedAt + "\"," +
