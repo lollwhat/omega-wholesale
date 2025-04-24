@@ -36,6 +36,7 @@ public class AuthController {
                         user = new PurchaseManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                     case "IM":
                         user = new InventoryManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                        break;
                     case "FM":
                         user = new FinanceManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
                     default:
@@ -63,6 +64,7 @@ public class AuthController {
             case "PM":
                 break;
             case "IM":
+                InventoryManagerView InventoryManager = new InventoryManagerView(user);
                 break;
             case "FM":
                 break;
