@@ -63,6 +63,7 @@ public class AuthController {
             case "PM":
                 break;
             case "IM":
+                InventoryManagerView InventoryManager = new InventoryManagerView(user);
                 break;
             case "FM":
                 break;
