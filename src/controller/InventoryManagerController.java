@@ -11,7 +11,7 @@ public class InventoryManagerController {
 
     // laod items - View Items Button
     public Object[][] loadItems() {
-        List<String> items = itemController.getAllItems();
+        List<String> items = itemController.getAll();
         if (items == null || items.isEmpty()) {
             return null;
         }
