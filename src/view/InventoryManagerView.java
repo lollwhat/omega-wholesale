@@ -285,10 +285,10 @@ public class InventoryManagerView extends JFrame {
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
             InventoryManagerController controller = new InventoryManagerController(new ItemController());
 
-            Object[][] approvedPurchaseOrders = controller.loadPurchaseOrders();
+            Object[][] purchaseOrders = controller.loadPurchaseOrders();
             String[] columns = controller.getPurchaseOrderTableColumns();
 
-            handleViewButton("No approved purchase orders available at the moment.", approvedPurchaseOrders, columns);
+            handleViewButton("No purchase orders available at the moment.", purchaseOrders, columns);
         });
 
         buttonWrapper.add(viewItemsButton);
@@ -402,10 +402,10 @@ public class InventoryManagerView extends JFrame {
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
             InventoryManagerController controller = new InventoryManagerController(new ItemController());
 
-            Object[][] approvedPurchaseOrders = controller.loadPurchaseOrders();
+            Object[][] purchaseOrders = controller.loadPurchaseOrders();
             String[] columns = controller.getPurchaseOrderTableColumns();
 
-            handleViewButton("No approved purchase orders available at the moment.", approvedPurchaseOrders, columns);
+            handleViewButton("No purchase orders available at the moment.", purchaseOrders, columns);
         });
         viewPurchaseOrdersButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
