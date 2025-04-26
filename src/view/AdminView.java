@@ -256,6 +256,35 @@ public class AdminView extends JFrame {
         return panel;
     }
 
+    private JPanel createUserManagementPanel(){
+        JPanel panel = new JPanel(new BorderLayout(0, 20));
+        panel.setBackground(mediumBlue);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Header with title and Add New User button
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(mediumBlue);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel titleLabel = new JLabel("User Management");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(highlightBlue);
+
+        JButton addUserButton = new JButton("Add New User");
+        addUserButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addUserButton.setForeground(textWhite);
+        addUserButton.setBackground(highlightBlue);
+        addUserButton.setFocusPainted(false);
+        addUserButton.setBorderPainted(false);
+        addUserButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        addUserButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Add New User clicked"));
+
+        headerPanel.add(titleLabel);
+        headerPanel.add(addUserButton, BorderLayout.EAST);
+
+        return panel;
+    }
+
     private void showDashboardContent(String contentType) {
         // This method would be expanded to show different content based on menu selection
         JOptionPane.showMessageDialog(this, contentType + " option selected");
