@@ -1,112 +1,109 @@
 package controller;
 
+import model.EntityType;
+import model.Item;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Date;
 
-public class ItemController {
-    private String itemId;
-    private String itemName;
-    private int quantity;
-    private String supplierId;
-    private String unit;
-    private String createdAt;
-    private String updatedAt;
-    private String createdBy;
-    private String updatedBy;
-    private String itemDetailsFile = "data/item_details.txt";
-    private FileController fileController = new FileController(itemDetailsFile);
-
+public class ItemController extends CRUDController<Item> {
     public ItemController() {
-        // Default constructor
+        super("data/item_details.txt", EntityType.ITEM);
     }
 
-    public List<String> getAllItems() {
-        try {
-            List<String> lines = fileController.getFile();
-            if (lines == null || lines.isEmpty()) {
-                System.out.println("No items found");
-                return null;
-            }
-            return lines;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+//    public List<String> getAllItems() {
+//        try {
+//            List<String> lines = FileController.getFile();
+//            if (lines == null || lines.isEmpty()) {
+//                System.out.println("No items found");
+//                return null;
+//            }
+//            return lines;
+//        } catch (Exception e) {
+//            System.out.println("Error reading all items from file: " + e.getMessage());
+//            return null;
+//        }
+//    }
+//
+//    public String getOneItemWithId(String itemId) {
+//        try {
+//            String[] itemDetails = fileController.getLine(0, itemId);
+//            if (itemDetails != null) {
+//                System.out.println("Item found: " + String.join(",", itemDetails));
+//                return String.join(",", itemDetails);
+//            } else {
+//                System.out.println("Item not found");
+//                return null;
+//            }
+//        } catch (Exception e) {
+//            System.out.println("Error reading the item from file: " + e.getMessage());
+//            return null;
+//        }
+//    }
 
-    public String getOneItemWithId(String itemId) {
+    @Override
+    public void add(Item item) {
         try {
-            String[] itemDetails = fileController.getLine(0, itemId);
-            if (itemDetails != null) {
-                System.out.println("Item found: " + String.join(",", itemDetails));
-                return String.join(",", itemDetails);
-            } else {
-                System.out.println("Item not found");
-                return null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public void addItem(String itemName, int quantity, String unit, String supplierId) {
-        try {
-            int tempItemId = fileController.getFile().size()+1;
-            this.itemId = "IM" + String.format("%03d", tempItemId);
-            this.itemName = itemName;
-            this.quantity = quantity;
-            this.unit = unit;
-            this.supplierId = supplierId;
-            this.createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            this.updatedAt = createdAt;
-            this.createdBy = SessionController.getInstance().getUserId();
-            this.updatedBy = SessionController.getInstance().getUserId();
-            String data = String.join(",", itemId, itemName, String.valueOf(quantity), unit, supplierId, createdAt, updatedAt, createdBy, updatedBy);
-            fileController.appendFile(data);
+            String data = item.toCSV();
+            FileController.appendFile(data);
             System.out.println("Item added successfully");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Failed to add item: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error adding item to file: " + e.getMessage());
         }
     }
 
-    public void updateItem(String itemId, String itemName, int quantity, String unit, String supplierId) {
+    public void addItem(String itemName, int quantity, String unit, String unitPrice, String supplierId) {
+        int tempItemId = FileController.getFile().size()+1;
+        String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String createdBy = SessionController.getInstance().getUserId();
+        String updatedBy = SessionController.getInstance().getUserId();
+        Item item = new Item("IM" + String.format("%03d", tempItemId), itemName, quantity, unit, unitPrice, supplierId, createdAt, createdAt, createdBy, updatedBy);
+        add(item);
+        String data = item.toCSV();
+        FileController.appendFile(data);
+        System.out.println("Item added successfully");
+    }
+
+    @Override
+    public void update(Item item) {
+        try {
+            String data = item.toCSV();
+            fileController.updateFile(data);
+            System.out.println("Item updated successfully");
+        } catch (Exception e) {
+            System.out.println("Error updating item in file: " + e.getMessage());
+        }
+    }
+
+    public void updateItem(String itemId, String itemName, int quantity, String unit, String unitPrice, String supplierId) {
         try {
             String[] existingItemDetails = fileController.getLine(0, itemId);
             if (existingItemDetails == null) {
                 System.out.println("Item not found");
                 return;
             }
-            this.itemId = itemId;
-            this.itemName = (itemName != null) ? itemName : existingItemDetails[1];
-            this.quantity = (quantity != 0) ? quantity : Integer.parseInt(existingItemDetails[2]);
-            this.unit = (unit != null) ? unit : existingItemDetails[3];
-            this.supplierId = (supplierId != null) ? supplierId : existingItemDetails[4];
-            this.createdAt = existingItemDetails[5];
-            this.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            this.createdBy = existingItemDetails[7];
-            this.updatedBy = SessionController.getInstance().getUserId();
-
-            String data = String.join(",", this.itemId, this.itemName, String.valueOf(this.quantity), this.unit, this.supplierId, createdAt, updatedAt, createdBy, updatedBy);
-            fileController.updateFile(data);
-            System.out.println("Item updated successfully");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Failed to update item: " + e.getMessage());
+            Item item = new Item(itemId, existingItemDetails[1], Integer.parseInt(existingItemDetails[2]), existingItemDetails[3], existingItemDetails[4], existingItemDetails[5], existingItemDetails[6], existingItemDetails[7], existingItemDetails[8], existingItemDetails[9]);
+            item.setItemName((itemName != null) ? itemName : existingItemDetails[1]);
+            item.setQuantity((quantity != 0) ? quantity : Integer.parseInt(existingItemDetails[2]));
+            item.setUnit((unit != null) ? unit : existingItemDetails[3]);
+            item.setUnitPrice((unitPrice != null) ? unitPrice : existingItemDetails[4]);
+            item.setSupplierId((supplierId != null) ? supplierId : existingItemDetails[5]);
+            item.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+            item.setUpdatedBy(SessionController.getInstance().getUserId());
+            update(item);
+        } catch (IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
         }
     }
 
-    public void deleteItem(String itemId) {
-        try {
-            fileController.deleteLine(itemId, 0);
-            System.out.println("Item deleted successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Failed to delete item: " + e.getMessage());
-        }
-    }
+//    public void deleteItem(String itemId) {
+//        try {
+//            fileController.deleteLine(itemId, 0);
+//            System.out.println("Item deleted successfully");
+//        } catch (Exception e) {
+//            System.out.println("Error deleting item from file: " + e.getMessage());
+//        }
+//    }
 }
