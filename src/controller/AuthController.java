@@ -20,14 +20,15 @@ public class AuthController {
                 String userId = details[0].trim();
                 String firstName = details[3].trim();
                 String lastName = details[4].trim();
-                String createdAt = details[5].trim();
-                String updatedAt = details[6].trim();
+                String status = details[5].trim();
+                String createdAt = details[6].trim();
+                String updatedAt = details[7].trim();
                 String roleCode = userId.substring(0, 2);
 
                 User user = null;
                 switch (roleCode) {
                     case "AM":
-                        user = new Admin(userId, username, password, firstName, lastName, createdAt, updatedAt);
+                        user = new Admin(userId, username, password, firstName, lastName, status, createdAt, updatedAt);
                         break;
                     case "SM":
                         user = new SalesManager(userId, username, password, firstName, lastName, createdAt, updatedAt);
