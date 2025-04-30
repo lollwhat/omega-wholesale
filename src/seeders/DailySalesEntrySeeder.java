@@ -7,15 +7,14 @@ import java.util.Date;
 
 
 public class DailySalesEntrySeeder {
-    private String DSEDetailsFile = "data/daily_sales_entry.txt";
-    private String createdAt;
+    final String DSEDetailsFile = "data/daily_sales_entry.txt";
 
     public DailySalesEntrySeeder() {
         // Default constructor
     }
 
     public void seeding() {
-        this.createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(DSEDetailsFile, false));
             writer.write("DSE001,Seeder Item ID A,Seeder Item Name A,Seeder Sales Date A,20,60,"+createdAt+",sales1,"+createdAt+",sales1\n");
@@ -26,7 +25,7 @@ public class DailySalesEntrySeeder {
             System.out.println("Successfully seeded data to daily_sales_entry.txt");
             writer.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error seeding data: " + e.getMessage());
         }
     }
 }
