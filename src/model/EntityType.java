@@ -3,7 +3,8 @@ package model;
 public enum EntityType {
     ITEM("item"),
     SUPPLIER("supplier"),
-    DAILY_SALES_ENTRY("daily_sales_entry");
+    DAILY_SALES_ENTRY("daily_sales_entry"),
+    PURCHASE_REQUISITION("purchase_requisition");
 
     private final String displayName;
 
