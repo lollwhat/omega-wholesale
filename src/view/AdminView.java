@@ -1,8 +1,11 @@
 package view;
 
+import controller.UserController;
 import model.*;
 
 import javax.swing.*;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
@@ -17,6 +20,7 @@ public class AdminView extends JFrame {
     private Color verylightBlue = new Color(165, 180, 252);
     private Color highlightBlue = new Color(78, 91, 249);
     private Color textWhite = new Color(255, 255, 255);
+    UserController userController = new UserController();
 
     public AdminView(User user) {
         setTitle("OWSB System");
@@ -27,7 +31,7 @@ public class AdminView extends JFrame {
 
         // Create sidebar and main panels
         createSidebar(user.getUsername(), user.getUserID());
-        createMainPanel(user.getUsername(), user.getUserID());
+        createMainPanel();
 
         // Add components to frame
         add(sidebarPanel, BorderLayout.WEST);
@@ -35,6 +39,18 @@ public class AdminView extends JFrame {
 
         setLocationRelativeTo(null); // Center on screen
         setVisible(true);
+    }
+
+    private JButton createDashboardButtons(String text){
+        JButton menuButton = new JButton(text);
+        menuButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        menuButton.setForeground(textWhite);
+        menuButton.setBackground(darkBlue);
+        menuButton.setFocusPainted(false);
+        menuButton.setBorderPainted(false);
+        menuButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        return menuButton;
     }
 
     private void createSidebar(String username, String userID) {
@@ -72,7 +88,6 @@ public class AdminView extends JFrame {
                 "View Purchase Orders"
         };
 
-        // Add components to sidebar
         sidebarPanel.add(systemLabel);
         sidebarPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         sidebarPanel.add(userLabel);
@@ -89,15 +104,9 @@ public class AdminView extends JFrame {
 
         // Add logout button at bottom with spacing
         sidebarPanel.add(Box.createVerticalGlue());
-        JButton logoutButton = new JButton("Logout");
-        logoutButton.setFont(new Font("Arial", Font.BOLD, 14));
-        logoutButton.setForeground(textWhite);
-        logoutButton.setBackground(lightBlue);
-        logoutButton.setFocusPainted(false);
-        logoutButton.setBorderPainted(false);
+        JButton logoutButton = createDashboardButtons("Logout");
         logoutButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         logoutButton.setMaximumSize(new Dimension(250, 40));
-        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Logout clicked"));
         sidebarPanel.add(logoutButton);
     }
@@ -126,14 +135,12 @@ public class AdminView extends JFrame {
             }
         });
 
-        button.addActionListener(e -> {
-            showDashboardContent(text);
-        });
+        button.addActionListener(e -> showDashboardContent(text));
 
         return button;
     }
 
-    private void createMainPanel(String username, String userID) {
+    private void createMainPanel() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.setBackground(mediumBlue);
@@ -143,7 +150,7 @@ public class AdminView extends JFrame {
         JPanel headerPanel = createHeaderPanel("Dashboard");
 
         // Default content panel
-        JPanel contentPanel = createDefaultContentPanel(username, userID);
+        JPanel contentPanel = createDefaultContentPanel();
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -172,7 +179,7 @@ public class AdminView extends JFrame {
         return headerPanel;
     }
 
-    private JPanel createDefaultContentPanel(String username, String userID) {
+    private JPanel createDefaultContentPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(mediumBlue);
@@ -186,16 +193,11 @@ public class AdminView extends JFrame {
 
         JPanel greetingPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         greetingPanel.setBackground(mediumBlue);
-        JLabel helloLabel = new JLabel("Hello, " + username + "! You are logged in as ");
+        JLabel helloLabel = new JLabel("Hello, Admin! You are logged in as Administrator");
         helloLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         helloLabel.setForeground(textWhite);
 
-        JLabel adminLabel = new JLabel(RoleName.getRoleName(userID.substring(0, 2)));
-        adminLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        adminLabel.setForeground(highlightBlue);
-
         greetingPanel.add(helloLabel);
-        greetingPanel.add(adminLabel);
 
         JLabel instructionLabel = new JLabel("Please select an option from the menu to get started.");
         instructionLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -225,15 +227,9 @@ public class AdminView extends JFrame {
 
         // Add quick access buttons
         for (String option : quickOptions) {
-            JButton quickButton = new JButton(option);
-            quickButton.setFont(new Font("Arial", Font.PLAIN, 14));
-            quickButton.setForeground(textWhite);
-            quickButton.setBackground(darkBlue);
-            quickButton.setFocusPainted(false);
-            quickButton.setBorderPainted(false);
+            JButton quickButton = createDashboardButtons(option);
             quickButton.setAlignmentX(Component.CENTER_ALIGNMENT);
             quickButton.setMaximumSize(new Dimension(300, 40));
-            quickButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             quickButton.addMouseListener(new MouseAdapter() {
                 @Override
@@ -257,9 +253,9 @@ public class AdminView extends JFrame {
     }
 
     private JPanel createUserManagementPanel(){
-        JPanel panel = new JPanel(new BorderLayout(0, 20));
-        panel.setBackground(mediumBlue);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(mediumBlue);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Header with title and Add New User button
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -279,14 +275,153 @@ public class AdminView extends JFrame {
         addUserButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addUserButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Add New User clicked"));
 
-        headerPanel.add(titleLabel);
-        headerPanel.add(addUserButton, BorderLayout.EAST);
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(mediumBlue);
+        titlePanel.add(titleLabel);
 
-        return panel;
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(mediumBlue);
+        buttonPanel.add(addUserButton);
+
+        headerPanel.add(titlePanel, BorderLayout.NORTH);
+        headerPanel.add(buttonPanel, BorderLayout.CENTER);
+
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(darkBlue);
+
+        String[] columnNames = {"User ID", "Username", "Full Name", "Email", "Role", "Status", "Actions"};
+
+        tablePanel.add(createTable(columnNames), BorderLayout.CENTER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    private JScrollPane createTable(String[] columnNames){
+        JTable table = new JTable(userController.addUserData(columnNames));
+        table.setBackground(darkBlue);
+        table.setForeground(textWhite);
+        table.setGridColor(new Color(50, 60, 80));
+        table.setRowHeight(75);
+        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        table.getTableHeader().setBackground(new Color(150, 165, 235));
+        table.getTableHeader().setForeground(textWhite);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.setSelectionBackground(new Color(60, 70, 90));
+
+        ActionButtonPanel actionPanel = new ActionButtonPanel(table);
+        int actionsColumn = columnNames.length - 1;
+        table.getColumnModel().getColumn(actionsColumn).setPreferredWidth(180);
+        table.getColumnModel().getColumn(actionsColumn).setCellRenderer(actionPanel);
+        table.getColumnModel().getColumn(actionsColumn).setCellEditor(actionPanel);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(darkBlue);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        return scrollPane;
+    }
+
+    // Combined renderer and editor for action buttons
+    class ActionButtonPanel extends AbstractCellEditor
+            implements TableCellRenderer, TableCellEditor {
+
+        private final JPanel panel;
+        private final JButton editButton;
+        private final JButton deleteButton;
+        private final JButton statusButton;
+        private final JTable table;
+        private int row;
+
+        public ActionButtonPanel(JTable table) {
+            this.table = table;
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
+            panel.setBackground(darkBlue);
+
+            // Create buttons
+            // Implement edit functionality by calling userController.editUser()
+            editButton = createActionButton("Edit", e -> {
+                String userId = (String) table.getValueAt(row, 0);
+                JOptionPane.showMessageDialog(panel, "Edit user with ID: " + userId);
+                // Implement edit functionality by calling userController.editUser()
+            });
+
+            deleteButton = createActionButton("Delete", e -> {
+                String userId = (String) table.getValueAt(row, 0);
+                int confirm = JOptionPane.showConfirmDialog(panel,
+                        "Are you sure you want to delete this user?",
+                        "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    // Implement delete functionality by calling userController.deleteUser()
+                    JOptionPane.showMessageDialog(panel, "User with ID " + userId + " deleted");
+                }
+            });
+
+            statusButton = createActionButton("Status", e -> {
+                String userId = (String) table.getValueAt(row, 0);
+                // Implement status change by calling userController.switchUserStatus()
+                JOptionPane.showMessageDialog(panel, "Status changed for user with ID: " + userId);
+            });
+
+            // Add buttons to panel
+            panel.add(editButton);
+            panel.add(deleteButton);
+            panel.add(statusButton);
+        }
+
+        private JButton createActionButton(String text, ActionListener listener) {
+            JButton button = new JButton(text);
+            button.setFont(new Font("Arial", Font.PLAIN, 12));
+            button.setForeground(textWhite);
+            button.setBackground(lightBlue);
+            button.setBorderPainted(false);
+            button.setFocusPainted(false);
+            button.setMargin(new Insets(2, 4, 2, 4));
+            button.addActionListener(listener);
+            return button;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            if (isSelected) {
+                panel.setBackground(table.getSelectionBackground());
+            } else {
+                panel.setBackground(table.getBackground());
+            }
+            return panel;
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected, int row, int column) {
+            this.row = row;
+            panel.setBackground(table.getSelectionBackground());
+            return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return "";
+        }
     }
 
     private void showDashboardContent(String contentType) {
-        // This method would be expanded to show different content based on menu selection
-        JOptionPane.showMessageDialog(this, contentType + " option selected");
+        mainPanel.removeAll();
+
+        JPanel contentPanel;
+        if (contentType.equals("User Management")) {
+            contentPanel = createUserManagementPanel();
+        } else {
+            contentPanel = createDefaultContentPanel();
+        }
+
+        mainPanel.add(createHeaderPanel(contentType), BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        mainPanel.revalidate();
+        mainPanel.repaint();
     }
 }
