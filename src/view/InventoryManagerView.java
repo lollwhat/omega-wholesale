@@ -22,6 +22,7 @@ public class InventoryManagerView extends JFrame {
     private Color mediumBlue = new Color(30, 41, 59);
     private Color lightBlue = new Color(96, 103, 205);
     private Color highlightBlue = new Color(78, 91, 249);
+    private JButton lastClickedButton = null;
 
     public InventoryManagerView(User user) {
         this.loggedInUsername = user;
@@ -118,6 +119,24 @@ public class InventoryManagerView extends JFrame {
         }
     }
 
+    // helper method for display "no data available" message
+    public class UIHelper {
+        private static final Color DARK_BLUE = new Color(21, 31, 46);
+
+        public static JPanel createDisplayNoDataAvailableMessage(String message) {
+            JPanel centeredPanel = new JPanel(new GridBagLayout());
+            centeredPanel.setBackground(DARK_BLUE);
+
+            JLabel noDataLabel = new JLabel(message);
+            noDataLabel.setForeground(Color.WHITE);
+            noDataLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            noDataLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            centeredPanel.add(noDataLabel);
+            return centeredPanel;
+        }
+    }
+
     // helper method for buttons
     private JButton createButton(String text, ActionListener actionListener) {
         JButton sideBarButton = new JButton(text);
@@ -133,15 +152,34 @@ public class InventoryManagerView extends JFrame {
         sideBarButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         sideBarButton.addActionListener(actionListener);
 
+        sideBarButton.addActionListener(e -> {
+            if (lastClickedButton != null && lastClickedButton != sideBarButton) {
+                lastClickedButton.setBackground(mediumBlue); // reset the previous button
+            }
+
+            sideBarButton.setBackground(lightBlue);
+
+            lastClickedButton = sideBarButton;
+            actionListener.actionPerformed(e);
+        });
+
         sideBarButton.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                sideBarButton.setBackground(lightBlue); // hover background
+//                sideBarButton.setBackground(lightBlue); // hover background
+
+                if (lastClickedButton != sideBarButton) {
+                    sideBarButton.setBackground(lightBlue);
+                }
             }
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                sideBarButton.setBackground(mediumBlue); // default background
+//                sideBarButton.setBackground(mediumBlue); // default background
+
+                if (lastClickedButton != sideBarButton) {
+                    sideBarButton.setBackground(mediumBlue);
+                }
             }
         });
 
@@ -153,6 +191,22 @@ public class InventoryManagerView extends JFrame {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
         return dateFormat.format(new Date());
+    }
+
+    // reusable method
+    private void handleViewButton(String noDataMessage, Object[][] data, String[] columnNames) {
+        quickAccessPanel.removeAll();
+
+        if (data == null || data.length == 0) {
+            JPanel noDataPanel = UIHelper.createDisplayNoDataAvailableMessage(noDataMessage);
+            quickAccessPanel.add(noDataPanel, BorderLayout.CENTER);
+        } else {
+            JPanel tablePanel = TableHelper.createTable(data, columnNames);
+            quickAccessPanel.add(tablePanel, BorderLayout.CENTER);
+        }
+
+        quickAccessPanel.revalidate();
+        quickAccessPanel.repaint();
     }
 
     // sidebar
@@ -188,34 +242,39 @@ public class InventoryManagerView extends JFrame {
               new ItemController()
             );
 
+//            Object[][] items = controller.loadItems();
+//            if (items == null || items.length == 0) {
+//                quickAccessPanel.removeAll();
+//
+//                JPanel centeredPanel = new JPanel(new GridBagLayout());
+//                centeredPanel.setBackground(quickAccessPanel.getBackground());
+//
+//                JLabel noItemsLabel = new JLabel("No items available at the moment.");
+//                noItemsLabel.setForeground(Color.WHITE);
+//                noItemsLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+//                noItemsLabel.setHorizontalAlignment(SwingConstants.CENTER);
+//
+//                centeredPanel.add(noItemsLabel);
+//                quickAccessPanel.add(centeredPanel, BorderLayout.CENTER);
+//                quickAccessPanel.revalidate();
+//                quickAccessPanel.repaint();
+//                return;
+//            }
+//
+//            String[] columns = controller.getItemTableColumns();
+//
+//            quickAccessPanel.removeAll();
+//
+//            JPanel tablePanel = TableHelper.createTable(items, columns);
+//            quickAccessPanel.add(tablePanel, BorderLayout.CENTER);
+//
+//            quickAccessPanel.revalidate();
+//            quickAccessPanel.repaint();
+
             Object[][] items = controller.loadItems();
-            if (items == null || items.length == 0) {
-                quickAccessPanel.removeAll();
-
-                JPanel centeredPanel = new JPanel(new GridBagLayout());
-                centeredPanel.setBackground(quickAccessPanel.getBackground());
-
-                JLabel noItemsLabel = new JLabel("No items available at the moment.");
-                noItemsLabel.setForeground(Color.WHITE);
-                noItemsLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-                noItemsLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-                centeredPanel.add(noItemsLabel);
-                quickAccessPanel.add(centeredPanel, BorderLayout.CENTER);
-                quickAccessPanel.revalidate();
-                quickAccessPanel.repaint();
-                return;
-            }
-
             String[] columns = controller.getItemTableColumns();
 
-            quickAccessPanel.removeAll();
-
-            JPanel tablePanel = TableHelper.createTable(items, columns);
-            quickAccessPanel.add(tablePanel, BorderLayout.CENTER);
-
-            quickAccessPanel.revalidate();
-            quickAccessPanel.repaint();
+            handleViewButton("No items available at the moment.", items, columns);
         });
 
         // TODO: inventory management
@@ -224,6 +283,12 @@ public class InventoryManagerView extends JFrame {
 
         // TODO: view POs
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
+            InventoryManagerController controller = new InventoryManagerController(new ItemController());
+
+            Object[][] purchaseOrders = controller.loadPurchaseOrders();
+            String[] columns = controller.getPurchaseOrderTableColumns();
+
+            handleViewButton("No purchase orders available at the moment.", purchaseOrders, columns);
         });
 
         buttonWrapper.add(viewItemsButton);
@@ -320,7 +385,12 @@ public class InventoryManagerView extends JFrame {
         buttonWrapper.setLayout(new GridLayout(3, 1, 10, 10));
 
         JButton viewItemsButton = createButton("View Items", e -> {
+            InventoryManagerController controller = new InventoryManagerController(new ItemController());
 
+            Object[][] items = controller.loadItems();
+            String[] columns = controller.getItemTableColumns();
+
+            handleViewButton("No items available at the moment.", items, columns);
         });
         viewItemsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -330,7 +400,12 @@ public class InventoryManagerView extends JFrame {
         inventoryManagementButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
+            InventoryManagerController controller = new InventoryManagerController(new ItemController());
 
+            Object[][] purchaseOrders = controller.loadPurchaseOrders();
+            String[] columns = controller.getPurchaseOrderTableColumns();
+
+            handleViewButton("No purchase orders available at the moment.", purchaseOrders, columns);
         });
         viewPurchaseOrdersButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
