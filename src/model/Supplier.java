@@ -1,16 +1,17 @@
 package model;
 
 public class Supplier {
-    private String supplierId, supplierCompany, supplierPIC, supplierDescription, supplierAddress, supplierPhone, status, createdAt, updatedAt, createdBy, updatedBy;
+    private String supplierId, supplierCompany, supplierPIC, supplierDescription, supplierAddress, supplierPhone, supplierEmail, supplierStatus, createdAt, updatedAt, createdBy, updatedBy;
 
-    public Supplier(String supplierId, String supplierCompany, String supplierPIC, String supplierDescription, String supplierAddress, String supplierPhone, String createdAt, String updatedAt, String createdBy, String updatedBy) {
+    public Supplier(String supplierId, String supplierCompany, String supplierPIC, String supplierDescription, String supplierAddress, String supplierPhone, String supplierEmail, String supplierStatus, String createdAt, String updatedAt, String createdBy, String updatedBy) {
         this.supplierId = supplierId;
         this.supplierCompany = supplierCompany;
         this.supplierPIC = supplierPIC;
         this.supplierDescription = supplierDescription;
         this.supplierAddress = supplierAddress;
         this.supplierPhone = supplierPhone;
-        this.status = "active";
+        this.supplierEmail = supplierEmail;
+        this.supplierStatus = supplierStatus; // Pending, Approved, Suspended
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.createdBy = createdBy;
@@ -35,6 +36,12 @@ public class Supplier {
     public String getSupplierPhone() { return supplierPhone; }
     public void setSupplierPhone(String supplierPhone) { this.supplierPhone = supplierPhone; }
 
+    public String getSupplierEmail() { return supplierEmail; }
+    public void setSupplierEmail(String supplierEmail) { this.supplierEmail = supplierEmail; }
+
+    public String getSupplierStatus() { return supplierStatus; }
+    public void setSupplierStatus(String supplierStatus) { this.supplierStatus = supplierStatus; }
+
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
@@ -48,7 +55,7 @@ public class Supplier {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String toCSV() {
-        return String.join(",", supplierId, supplierCompany, supplierPIC, supplierDescription, supplierAddress, supplierPhone, createdAt, updatedAt, createdBy, updatedBy);
+        return String.join(",", supplierId, supplierCompany, supplierPIC, supplierDescription, supplierAddress, supplierPhone, supplierEmail, supplierStatus, createdAt, updatedAt, createdBy, updatedBy);
     }
 
     public String toJSON() {
@@ -59,6 +66,8 @@ public class Supplier {
                 "\"supplierDescription\": \"" + supplierDescription + "\"," +
                 "\"supplierAddress\": \"" + supplierAddress + "\"," +
                 "\"supplierPhone\": \"" + supplierPhone + "\"," +
+                "\"supplierEmail\": \"" + supplierEmail + "\"," +
+                "\"supplierStatus\": \"" + supplierStatus + "\"," +
                 "\"createdAt\": \"" + createdAt + "\"," +
                 "\"updatedAt\": \"" + updatedAt + "\"," +
                 "\"createdBy\": \"" + createdBy + "\"," +

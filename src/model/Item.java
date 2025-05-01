@@ -3,7 +3,8 @@ package model;
 import controller.FileController;
 
 public class Item {
-    private String itemId;
+    private String itemEntryId;
+    private String itemCode;
     private String itemName;
     private int quantity;
     private String supplierId;
@@ -14,8 +15,9 @@ public class Item {
     private String createdBy;
     private String updatedBy;
 
-    public Item(String itemId, String itemName, int quantity, String supplierId, String unit, String unitPrice, String createdAt, String updatedAt, String createdBy, String updatedBy) {
-        this.itemId = itemId;
+    public Item(String itemEntryId, String itemCode, String itemName, int quantity, String supplierId, String unit, String unitPrice, String createdAt, String updatedAt, String createdBy, String updatedBy) {
+        this.itemEntryId = itemEntryId;
+        this.itemCode = itemCode;
         this.itemName = itemName;
         this.quantity = quantity;
         this.supplierId = supplierId;
@@ -28,10 +30,17 @@ public class Item {
     }
 
     public String getItemId() {
-        return itemId;
+        return itemEntryId;
     }
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
+    public void setItemId(String itemEntryId) {
+        this.itemEntryId = itemEntryId;
+    }
+
+    public String getItemCode() {
+        return itemCode;
+    }
+    public void setItemCode(String itemCode) {
+        this.itemCode = itemCode;
     }
 
     public String getItemName() {
@@ -76,12 +85,13 @@ public class Item {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String toCSV() {
-        return String.join(",", itemId, itemName, String.valueOf(quantity), supplierId, unit, unitPrice, createdAt, updatedAt, createdBy, updatedBy);
+        return String.join(",", itemEntryId, itemCode, itemName, String.valueOf(quantity), supplierId, unit, unitPrice, createdAt, updatedAt, createdBy, updatedBy);
     }
 
     public String toJSON() {
         return "{" +
-                "\"itemId\": \"" + itemId + "\"," +
+                "\"itemEntryId\": \"" + itemEntryId + "\"," +
+                "\"itemCode\": \"" + itemCode + "\"," +
                 "\"itemName\": \"" + itemName + "\"," +
                 "\"quantity\": " + quantity + "," +
                 "\"unit\": \"" + unit + "\"," +
