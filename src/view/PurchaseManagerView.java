@@ -192,7 +192,7 @@ public class PurchaseManagerView extends JFrame {
     public static void main(String[] args) {
         PurchaseManager pm = new PurchaseManager(
                 "PM001", "purchase1", "purchase123",
-                "Michael", "Williams", "2025-04-01", "2025-04-01"
+                "Michael", "Williams", "michealwilliams@oswb.com",  "active", "2025-04-01", "2025-04-01"
         );
         SwingUtilities.invokeLater(() -> new PurchaseManagerView(pm));
     }
