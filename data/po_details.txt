@@ -1,2 +1,5 @@
 PO001, 2023-10-05, PR002, Tablet, 30, Tech Solutions Inc., Pending, purchase, Pending
 PO002, 2023-10-06, Direct, Monitor, 15, Computer Accessories Ltd., Approved, purchase, finance
+PO003, 2025-05-01, Direct, Seeder Item B, 1, Seeder Supplier B, Pending, purchase, Pending
+PO004, 2025-05-01, PR002 - Tablet (30), Seeder Item B, 1, Seeder Supplier C, Pending, purchase, 
+
