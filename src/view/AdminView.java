@@ -295,7 +295,7 @@ public class AdminView extends JFrame {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(darkBlue);
 
-        String[] columnNames = {"User ID", "Username", "Full Name", "Email", "Role", "Status", "Actions"};
+        String[] columnNames = {"ID", "Username", "Full Name", "Email", "Role", "Status", "Actions"};
 
         tablePanel.add(createTable(columnNames), BorderLayout.CENTER);
 
@@ -316,6 +316,12 @@ public class AdminView extends JFrame {
         table.getTableHeader().setForeground(textWhite);
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         table.setSelectionBackground(new Color(60, 70, 90));
+
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);
+        table.getColumnModel().getColumn(2).setPreferredWidth(100);
+        table.getColumnModel().getColumn(3).setPreferredWidth(175);
+        table.getColumnModel().getColumn(4).setPreferredWidth(100);
+        table.getColumnModel().getColumn(5).setPreferredWidth(50);
 
         ActionButtonPanel actionPanel = new ActionButtonPanel(table);
         int actionsColumn = columnNames.length - 1;
