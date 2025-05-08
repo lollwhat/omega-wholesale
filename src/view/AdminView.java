@@ -1,6 +1,6 @@
 package view;
 
-import controller.UserController;
+import controller.*;
 import model.*;
 
 import javax.swing.*;
@@ -107,7 +107,13 @@ public class AdminView extends JFrame {
         JButton logoutButton = createDashboardButtons("Logout");
         logoutButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         logoutButton.setMaximumSize(new Dimension(250, 40));
-        logoutButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Logout clicked"));
+        logoutButton.addActionListener(
+                e -> {
+                    AuthController authController = new AuthController();
+                    authController.logout();
+                    dispose();
+                }
+        );
         sidebarPanel.add(logoutButton);
     }
 
