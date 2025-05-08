@@ -17,6 +17,13 @@ public class LoginView extends JFrame {
     public LoginView(AuthController authController) {
         this.authController = authController;
 
+        try {
+            ImageIcon icon = new ImageIcon("assets/omega-wholesale-black.png");
+            this.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Failed to load application icon: " + e.getMessage());
+        }
+
         // Frame setup
         setTitle("OWSB System");
         setSize(400, 600);
