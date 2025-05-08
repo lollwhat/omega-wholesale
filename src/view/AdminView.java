@@ -24,7 +24,7 @@ public class AdminView extends JFrame {
 
     public AdminView(User user) {
         setTitle("OWSB System");
-        setSize(1000, 700);
+        setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(darkBlue);
