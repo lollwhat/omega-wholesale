@@ -5,7 +5,8 @@ public enum EntityType {
     SUPPLIER("supplier"),
     DAILY_SALES_ENTRY("daily_sales_entry"),
     PURCHASE_REQUISITION("purchase_requisition"),
-    PURCHASE_ORDER("purchase_order"),;
+    PURCHASE_ORDER("purchase_order"),
+    USER("user"),;
 
     private final String displayName;
 

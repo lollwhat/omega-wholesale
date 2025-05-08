@@ -77,4 +77,8 @@ public abstract class User {
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public String toCSV() {
+        return String.join(",", userID, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+    }
 }
