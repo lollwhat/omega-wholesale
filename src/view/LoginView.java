@@ -18,7 +18,7 @@ public class LoginView extends JFrame {
         this.authController = authController;
 
         // Frame setup
-        setTitle("OWSB Login");
+        setTitle("OWSB System");
         setSize(400, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
