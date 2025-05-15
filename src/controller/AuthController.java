@@ -80,6 +80,7 @@ public class AuthController extends CRUDController<User>{
                 InventoryManagerView InventoryManager = new InventoryManagerView(user);
                 break;
             case "FM":
+                FinanceManagerView FinanceManager = new FinanceManagerView(user);
                 break;
             default:
                 break;
