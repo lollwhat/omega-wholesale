@@ -26,7 +26,7 @@ public class SupplierSeeder {
             System.out.println("Successfully Seeded data to supplier_details.txt");
             writer.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error seeding data: " + e.getMessage());
         }
     }
 }

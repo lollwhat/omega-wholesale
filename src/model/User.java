@@ -6,15 +6,19 @@ public abstract class User {
     protected String password;
     protected String firstName;
     protected String lastName;
+    protected String email;
+    protected String status;
     protected String createdAt;
     protected String updatedAt;
 
-    public User(String userID, String username, String password, String firstName, String lastName, String createdAt, String updatedAt) {
+    public User(String userID, String username, String password, String firstName, String lastName, String email, String status, String createdAt, String updatedAt) {
         this.userID = userID;
         this.username = username;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.email = email;
+        this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -49,6 +53,18 @@ public abstract class User {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
+    }
     public String getCreatedAt() {
         return createdAt;
     }
@@ -60,5 +76,9 @@ public abstract class User {
     }
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String toCSV() {
+        return String.join(",", userID, username, password, firstName, lastName, email, status, createdAt, updatedAt);
     }
 }
