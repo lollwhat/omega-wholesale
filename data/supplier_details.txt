@@ -1,5 +1,7 @@
-SUP001,Seeder Supplier A,Seeder PIC A,Seeder Description A,Seeder Address A,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
-SUP002,Seeder Supplier B,Seeder PIC B,Seeder Description B,Seeder Address B,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
-SUP003,Seeder Supplier C,Seeder PIC C,Seeder Description C,Seeder Address C,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
-SUP004,Seeder Supplier D,Seeder PIC D,Seeder Description D,Seeder Address D,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
-SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,2025-04-24 17:09:04,2025-04-24 17:09:04,sales1,sales1
+SUP001,Supplier Company A,Seeder PIC A,Seeder Description A,Seeder Address A,+6008123456789,example@email.com,0,2025-05-23 00:59:46,2025-05-23 13:55:31,sales1,SM001
+SUP002,Seeder Supplier B,Seeder PIC B,Seeder Description B,Seeder Address B,08123456789,example@email.com,0,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
+SUP003,Seeder Supplier C,Seeder PIC C,Seeder Description C,Seeder Address C,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
+SUP004,Seeder Supplier D,Seeder PIC D,Seeder Description D,Seeder Address D,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
+SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
+SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,example@email.com,2,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
+SUP007,Supplier Company C,Supplier PIC,Supplier Description,Address,+600123456789,user@example.com,0,2025-05-23 01:47:56,2025-05-23 21:01:59,SM001,SM001
