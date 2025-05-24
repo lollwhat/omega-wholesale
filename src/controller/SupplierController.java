@@ -68,4 +68,19 @@ public class SupplierController extends CRUDController<Supplier> {
         }
 
     }
+
+    public String getOneByCompanyName(String supplierName) {
+        try {
+            String[] details = fileController.getLine(1, supplierName);
+            if (details != null) {
+                return String.join(",", details);
+            } else {
+                System.out.println("Supplier not found");
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading the supplier from file: " + e.getMessage());
+            return null;
+        }
+    }
 }
