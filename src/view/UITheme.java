@@ -9,4 +9,6 @@ public class UITheme {
     public static final Color VERY_LIGHT_BLUE = new Color(165, 180, 252);
     public static final Color HIGHLIGHT_BLUE = new Color(78, 91, 249);
     public static final Color TEXT_WHITE = new Color(255, 255, 255);
+    public static final Color ERROR_RED = new Color(239, 68, 68);
+    public static final Color SUCCESS_GREEN = new Color(0, 153, 51);
 }
