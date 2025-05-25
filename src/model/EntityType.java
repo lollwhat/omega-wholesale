@@ -2,7 +2,8 @@ package model;
 
 public enum EntityType {
     ITEM("item"),
-    SUPPLIER("supplier");
+    SUPPLIER("supplier"),
+    STOCK("stock");
 
     private final String displayName;
 
