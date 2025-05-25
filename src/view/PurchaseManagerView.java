@@ -1,43 +1,50 @@
 package view;
 
-import controller.AuthController;
-import controller.PurchaseManagerController;
-import controller.ItemController;
-import controller.SupplierController;
+import controller.*;
 import model.User;
 
 import javax.swing.*;
+import javax.swing.table.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.SwingConstants;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import org.jdatepicker.impl.*;
+import java.util.Properties;
 
 public class PurchaseManagerView extends JFrame {
-    private User currentUser;
+    private final User currentUser;
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    private JTable purchaseOrderTable;
-    private DefaultTableModel tableModel;
-    private JButton saveButton;
-    private JComboBox<String> itemComboBox;
-    private JComboBox<String> supplierComboBox;
-    private JTextField qtyField;
-    private JTextField dateField;
-    private JComboBox<String> requisitionComboBox;
-    private PurchaseManagerController controller;
+    private JScrollPane generatePurchaseOrderScrollPane;
+    private JScrollPane viewPurchaseOrderScrollPane;
 
-
+    private PurchaseManagerController purchaseManagerController;
+    private PurchaseOrderController purchaseOrderController;
+    private ItemController itemController;
+    private SupplierController supplierController;
+    private PurchaseRequisitionController requisitionController;
 
     public PurchaseManagerView(User user) {
         this.currentUser = user;
+        itemController = new ItemController();
+        supplierController = new SupplierController();
+        requisitionController = new PurchaseRequisitionController();
+        this.purchaseOrderController = new PurchaseOrderController();
+        this.purchaseManagerController = new PurchaseManagerController(itemController, supplierController, requisitionController);
+        TableHelper.viewRef = this;
+
         initComponents();
     }
 
+    public PurchaseOrderController getPurchaseOrderController() {
+        return purchaseOrderController;
+    }
     private void initComponents() {
         setTitle("OWSB System – Purchase Manager");
         setSize(1200, 700);
@@ -48,12 +55,12 @@ public class PurchaseManagerView extends JFrame {
         AuthController authController = new AuthController();
 
         JPanel sidebar = new JPanel(null);
-        sidebar.setBackground(new Color(20, 25, 45));
+        sidebar.setBackground(UITheme.DARK_BLUE);
         sidebar.setBounds(0, 0, 300, 700);
 
         JLabel lblSystem = new JLabel("OWSB System");
         lblSystem.setFont(new Font("SanSerif UI", Font.BOLD, 22));
-        lblSystem.setForeground(new Color(128, 140, 255));
+        lblSystem.setForeground(UITheme.LIGHT_BLUE);
         lblSystem.setBounds(20, 20, 260, 30);
         sidebar.add(lblSystem);
 
@@ -76,17 +83,17 @@ public class PurchaseManagerView extends JFrame {
             JButton btn = new JButton(m);
             btn.setBounds(20, y, 260, 40);
             btn.setForeground(Color.WHITE);
-            btn.setBackground(new Color(30, 35, 55));
+            btn.setBackground(UITheme.DARK_BLUE);
             btn.setFont(new Font("SanSerif UI", Font.BOLD, 14));
             btn.setBorderPainted(false);
             btn.setFocusPainted(false);
             btn.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
-                    btn.setBackground(new Color(113, 119, 255));
+                    btn.setBackground(UITheme.VERY_LIGHT_BLUE);
                 }
 
                 public void mouseExited(MouseEvent e) {
-                    btn.setBackground(new Color(30, 35, 55));
+                    btn.setBackground(UITheme.MEDIUM_BLUE);
                 }
             });
             btn.addActionListener(e -> cardLayout.show(mainPanel, m));
@@ -96,18 +103,18 @@ public class PurchaseManagerView extends JFrame {
 
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.setBounds(70, 550, 150, 40);
-        logoutBtn.setForeground(Color.WHITE);
-        logoutBtn.setBackground(new Color(96, 103, 205));
+        logoutBtn.setForeground(UITheme.TEXT_WHITE);
+        logoutBtn.setBackground(UITheme.LIGHT_BLUE);
         logoutBtn.setFont(new Font("SanSerif UI", Font.BOLD, 14));
         logoutBtn.setBorderPainted(false);
         logoutBtn.setFocusPainted(false);
         logoutBtn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                logoutBtn.setBackground(new Color(30, 41, 59));
+                logoutBtn.setBackground(UITheme.MEDIUM_BLUE);
             }
 
             public void mouseExited(MouseEvent e) {
-                logoutBtn.setBackground(new Color(96, 41, 205));
+                logoutBtn.setBackground(UITheme.LIGHT_BLUE);
             }
         });
         logoutBtn.addActionListener(e -> {
@@ -122,76 +129,234 @@ public class PurchaseManagerView extends JFrame {
         mainPanel = new JPanel(cardLayout);
         mainPanel.setBounds(300, 0, 900, 700);
 
+        // Add panels to mainPanel using controller data
         mainPanel.add(createDashboardPanel(), "Dashboard");
         mainPanel.add(createViewItemsPanel(), "View Items");
         mainPanel.add(createSupplierPanel(), "View Suppliers");
         mainPanel.add(createRequisitionPanel(), "View Requisitions");
         mainPanel.add(createGeneratePurchaseOrderPanel(), "Generate Purchase Order");
         mainPanel.add(createViewPurchaseOrderPanel(), "View Purchase Orders");
-
-
-        add(mainPanel);
         cardLayout.show(mainPanel, "Dashboard");
+        add(mainPanel);
 
+
+        // Property change listener for refreshing PO tables after a new PO is created
         this.addPropertyChangeListener("PO_CREATED", evt -> {
-            refreshGeneratePOTable();
-            refreshViewPOTable();
+
         });
 
         setVisible(true);
+
     }
 
-
     public static class TableHelper {
+
+        // Reference to view for callback (must set this externally)
+        public static PurchaseManagerView viewRef;
+
+        // Method to create a table
         public static JPanel createTable(Object[][] data, String[] columnNames) {
             DefaultTableModel tableModel = new DefaultTableModel(data, columnNames) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
-                    return false;
+                    return columnNames[column].equalsIgnoreCase("Actions");
                 }
             };
 
             JTable table = new JTable(tableModel);
+            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
+
+            // Center align cells except "Actions"
             DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
             centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
             for (int i = 0; i < table.getColumnCount(); i++) {
-                table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+                if (!columnNames[i].equalsIgnoreCase("Actions")) {
+                    table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+                }
             }
 
-            table.setForeground(Color.WHITE);
-            table.setBackground(new Color(30, 41, 59));
+            for (int i = 0; i < columnNames.length; i++) {
+                if (columnNames[i].equalsIgnoreCase("Actions")) {
+                    table.getColumnModel().getColumn(i).setCellRenderer(new ActionButtonRenderer(table));
+                    table.getColumnModel().getColumn(i).setCellEditor(new ActionButtonEditor(new JCheckBox(), table));
+                    table.getColumnModel().getColumn(i).setPreferredWidth(120);
+                    table.getColumnModel().getColumn(i).setMaxWidth(120);
+                }
+            }
+
+            // Styling
+            table.setForeground(UITheme.TEXT_WHITE);
+            table.setBackground(UITheme.MEDIUM_BLUE);
             table.setFont(new Font("SansSerif", Font.PLAIN, 10));
             table.setRowHeight(30);
-
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            table.setRowSelectionAllowed(true);
-            table.setColumnSelectionAllowed(false);
-            table.setSelectionBackground(new Color(165, 180, 252));
-
+            table.setSelectionBackground(UITheme.VERY_LIGHT_BLUE);
             table.getTableHeader().setReorderingAllowed(false);
             table.setShowGrid(false);
 
             JTableHeader tableHeader = table.getTableHeader();
             tableHeader.setFont(new Font("SansSerif", Font.BOLD, 12));
-            tableHeader.setBackground(new Color(165, 180, 252));
-            tableHeader.setForeground(Color.WHITE);
+            tableHeader.setBackground(UITheme.VERY_LIGHT_BLUE);
+            tableHeader.setForeground(UITheme.TEXT_WHITE);
             tableHeader.setPreferredSize(new Dimension(tableHeader.getPreferredSize().width, 35));
 
-            JScrollPane scrollPane = new JScrollPane(table);
-            scrollPane.setBorder(BorderFactory.createEmptyBorder());
-            scrollPane.getViewport().setBackground(new Color(30, 41, 59));
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBackground(UITheme.MEDIUM_BLUE);
+            panel.add(table.getTableHeader(), BorderLayout.NORTH);
+            panel.add(table, BorderLayout.CENTER);
 
-            // Adding horizontal scrolling
-            scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+            return panel;
 
-            JPanel tablePanel = new JPanel(new BorderLayout());
-            tablePanel.add(scrollPane, BorderLayout.CENTER);
+        }
 
-            return tablePanel;
+        static class ActionButtonRenderer extends JPanel implements TableCellRenderer {
+            private final JTable table;
+
+            public ActionButtonRenderer(JTable table) {
+                this.table = table;
+                setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+                setOpaque(true);
+                setBackground(UITheme.DARK_BLUE);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+                removeAll();
+                String poID = table.getValueAt(row, 0).toString();
+                JButton[] buttons = createActionButtons(poID);
+
+                for (int i = 0; i < buttons.length; i++) {
+                    add(buttons[i]);
+                    if (i < buttons.length - 1) {
+                        add(Box.createRigidArea(new Dimension(5, 0)));
+                    }
+                }
+
+                return this;
+            }
+        }
+
+        static class ActionButtonEditor extends AbstractCellEditor implements TableCellEditor {
+            private final JPanel panel;
+            private final JTable table;
+
+            public ActionButtonEditor(JCheckBox checkBox, JTable table) {
+                this.table = table;
+                panel = new JPanel();
+                panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+                panel.setBackground(UITheme.DARK_BLUE);
+            }
+
+            @Override
+            public Component getTableCellEditorComponent(JTable table, Object value,
+                                                         boolean isSelected, int row, int column) {
+                panel.removeAll();
+                String poID = table.getValueAt(row, 0).toString();
+                JButton[] buttons = createActionButtons(poID);
+
+                for (int i = 0; i < buttons.length; i++) {
+                    panel.add(buttons[i]);
+                    if (i < buttons.length - 1) {
+                        panel.add(Box.createRigidArea(new Dimension(5, 0)));
+                    }
+                }
+
+                return panel;
+            }
+
+            @Override
+            public Object getCellEditorValue() {
+                return null;
+            }
+        }
+
+        private static JButton[] createActionButtons(String poID) {
+            JButton btnEdit = new JButton("Edit");
+            JButton btnDelete = new JButton("Delete");
+
+            btnEdit.setFont(new Font("SansSerif", Font.PLAIN, 10));
+            btnDelete.setFont(new Font("SansSerif", Font.PLAIN, 10));
+
+            // Set colors
+            btnEdit.setBackground(new Color(0, 128, 0));  // dark green
+            btnEdit.setForeground(UITheme.TEXT_WHITE);           // white text for contrast
+
+            btnDelete.setBackground(new Color(204, 0, 0)); // dark red
+            btnDelete.setForeground(UITheme.TEXT_WHITE);          // white text
+
+            btnEdit.addActionListener(e -> {
+                String[] data = viewRef.getPurchaseOrderController().getPurchaseOrderDataById(poID);
+
+                if (data != null && data.length >= 9) { // at least 9 fields expected
+                    try {
+                        String date = data[1];
+                        String requisition = data[2];
+                        String item = data[3];
+                        int quantity = Integer.parseInt(data[4].trim());
+                        String supplier = data[5];
+                        String status = data[6];
+                        String createdBy = data[7];
+                        String approvedBy = data[8];
+
+                        JPanel editPanel = viewRef.createEditFormPanel(
+                                poID, date, requisition, item, quantity, supplier, status, createdBy, approvedBy
+                        );
+
+                        JDialog dialog = new JDialog((Frame) null, "Edit Purchase Order " + poID, true);
+                        dialog.getContentPane().add(editPanel);
+                        dialog.pack();
+                        dialog.setSize(420, 570);
+                        dialog.setLocationRelativeTo(null);
+                        dialog.setResizable(false);
+
+                        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                            @Override
+                            public void windowClosed(java.awt.event.WindowEvent e) {
+                                viewRef.updateTables();
+                            }
+
+                            @Override
+                            public void windowClosing(java.awt.event.WindowEvent e) {
+                                viewRef.updateTables();
+                            }
+                        });
+
+                        dialog.setVisible(true);
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "Error loading edit form: " + ex.getMessage());
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Could not load Purchase Order data.");
+                }
+            });
+
+            btnDelete.addActionListener(e -> {
+                int confirm = JOptionPane.showConfirmDialog(null,
+                        "Are you sure you want to delete PO " + poID + "?",
+                        "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+                if (confirm == JOptionPane.YES_OPTION) {
+                    try {
+                        // delete method in controller is void, so no return
+                        viewRef.getPurchaseOrderController().delete(poID);
+                        JOptionPane.showMessageDialog(null, "Purchase Order deleted.");
+                        viewRef.updateTables(); // refresh the table
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null,
+                                "Failed to delete Purchase Order.\n" + ex.getMessage(),
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+
+            return new JButton[]{btnEdit, btnDelete};
         }
     }
-
 
     public static class UIHelper {
         private static final Color DARK_BLUE = new Color(21, 31, 46);
@@ -210,14 +375,13 @@ public class PurchaseManagerView extends JFrame {
         }
     }
 
-
     private JPanel createTopBar(String title) {
         JPanel bar = new JPanel(null);
         bar.setBackground(new Color(20, 25, 45));
         bar.setBounds(0, 0, 900, 100);
         JLabel lbl = new JLabel(title);
         lbl.setFont(new Font("SanSerif UI", Font.BOLD, 24));
-        lbl.setForeground(new Color(135, 142, 255));
+        lbl.setForeground(UITheme.PURPLE);
         lbl.setBounds(20, 30, 400, 30);
         bar.add(lbl);
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
@@ -240,19 +404,19 @@ public class PurchaseManagerView extends JFrame {
         JLabel welcomeLabel = new JLabel("Welcome to Omega Wholesale Business System", SwingConstants.CENTER);
         welcomeLabel.setFont(new Font("SanSerif", Font.BOLD, 18));
         welcomeLabel.setForeground(Color.WHITE);
-        welcomeLabel.setBounds(0, 120, 900, 30);
+        welcomeLabel.setBounds(20, 120, 900, 30);
         p.add(welcomeLabel);
 
         JLabel greetingLabel = new JLabel("Hello, " + username + "! You are logged in as ", SwingConstants.CENTER);
         greetingLabel.setFont(new Font("SanSerif", Font.PLAIN, 14));
         greetingLabel.setForeground(Color.WHITE);
-        greetingLabel.setBounds(0, 160, 900, 20);
+        greetingLabel.setBounds(-60, 160, 900, 20);
         p.add(greetingLabel);
 
         JLabel roleLabel = new JLabel("Purchase Manager");
         roleLabel.setFont(new Font("SanSerif", Font.BOLD, 14));
-        roleLabel.setForeground(new Color(160, 146, 246));
-        roleLabel.setBounds(580, 160, 200, 20);
+        roleLabel.setForeground(UITheme.PURPLE);
+        roleLabel.setBounds(520, 160, 200, 20);
         p.add(roleLabel);
 
         JLabel instructionLabel = new JLabel("Please select an option from the menu to get started.", SwingConstants.CENTER);
@@ -263,16 +427,16 @@ public class PurchaseManagerView extends JFrame {
 
         JLabel quickAccessLabel = new JLabel("Quick Access", SwingConstants.CENTER);
         quickAccessLabel.setFont(new Font("SanSerif", Font.BOLD, 16));
-        quickAccessLabel.setForeground(new Color(160, 146, 246));
+        quickAccessLabel.setForeground(UITheme.PURPLE);
         quickAccessLabel.setBounds(0, 240, 900, 25);
         p.add(quickAccessLabel);
 
         JLabel link1 = createQuickAccessLink("View Items", "View Items", 300);
-        link1.setBounds(50, 270, 300, 30);
+        link1.setBounds(50, 320, 300, 30);
         JLabel link2 = createQuickAccessLink("View Suppliers", "View Suppliers", 340);
-        link2.setBounds(50, 310, 300, 30);
+        link2.setBounds(50, 360, 300, 30);
         JLabel link3 = createQuickAccessLink("View Requisitions", "View Requisitions", 380);
-        link3.setBounds(50, 350, 300, 30);
+        link3.setBounds(50, 400, 300, 30);
         p.add(link1);
         p.add(link2);
         p.add(link3);
@@ -288,7 +452,7 @@ public class PurchaseManagerView extends JFrame {
         link.setCursor(new Cursor(Cursor.HAND_CURSOR));
         link.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                link.setForeground(new Color(170, 150, 255));
+                link.setForeground(UITheme.LIGHT_PURPLE);
             }
 
             public void mouseExited(MouseEvent e) {
@@ -304,298 +468,565 @@ public class PurchaseManagerView extends JFrame {
 
     private JPanel createViewItemsPanel() {
         JPanel p = new JPanel(null);
-        p.setBackground(new Color(36, 42, 64));
+        p.setBackground(UITheme.MEDIUM_BLUE);
         p.add(createTopBar("View Items"));
 
         // Create the controllers
         ItemController itemController = new ItemController();
 
         // Pass both controllers into the PurchaseManagerController
-        PurchaseManagerController controller = new PurchaseManagerController(itemController, null);
+        PurchaseManagerController controller = new PurchaseManagerController(itemController, null, null);
+
 
         // Load item data and columns
         Object[][] itemData = controller.loadItems();
         String[] itemColumns = controller.getItemTableColumns();
 
+        // Create either a table or a "no data" message panel
         JPanel tablePanel;
-        if (itemData != null && itemData.length > 0) {
-            tablePanel = TableHelper.createTable(itemData, itemColumns);
-        } else {
+        if (itemData == null || itemData.length == 0) {
             tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Items Available");
+        } else {
+            tablePanel = TableHelper.createTable(itemData, itemColumns);  // Returns a JPanel containing JTable
         }
-        tablePanel.setBounds(50, 120, 800, 500);
-        p.add(tablePanel);
+
+        // Ensure preferred size is larger than scroll pane size to enable horizontal scroll
+        tablePanel.setPreferredSize(new Dimension(1000, 500));
+
+        // ✅ Wrap the tablePanel in a JScrollPane
+        JScrollPane scrollPane = new JScrollPane(tablePanel);
+        scrollPane.setBounds(50, 120, 800, 500);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+        p.add(scrollPane);
 
         return p;
     }
 
     private JPanel createSupplierPanel() {
         JPanel p = new JPanel(null);
-        p.setBackground(new Color(36, 42, 64));
+        p.setBackground(UITheme.MEDIUM_BLUE);
         p.add(createTopBar("View Suppliers"));
 
         SupplierController supplierController = new SupplierController();
+        PurchaseManagerController controller = new PurchaseManagerController(null, supplierController, null);
 
-        PurchaseManagerController controller = new PurchaseManagerController(null,supplierController);
-
+        // Load supplier data and columns
         Object[][] supplierData = controller.loadSuppliers();
         String[] supplierColumns = controller.getSupplierTableColumns();
 
+        // Create either a table or a "no data" message panel
         JPanel tablePanel;
-        if (supplierData != null && supplierData.length > 0) {
-            tablePanel = TableHelper.createTable(supplierData, supplierColumns);
-        } else {
+        if (supplierData == null || supplierData.length == 0) {
             tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Suppliers Available");
+        } else {
+            tablePanel = TableHelper.createTable(supplierData, supplierColumns);
+
+            tablePanel.setPreferredSize(new Dimension(1000, 500));
         }
-        tablePanel.setBounds(50, 120, 800, 500);
-        p.add(tablePanel);
 
+        // Wrap in JScrollPane
+        JScrollPane scrollPane = new JScrollPane(tablePanel);
+        scrollPane.setBounds(50, 120, 800, 500);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+
+        p.add(scrollPane);
         return p;
-
     }
 
     private JPanel createRequisitionPanel() {
         JPanel p = new JPanel(null);
-        p.setBackground(new Color(36, 42, 64));
+        p.setBackground(UITheme.MEDIUM_BLUE);
         p.add(createTopBar("View Requisitions"));
+
+        Object[][] requisitionData = purchaseManagerController.loadRequisitions(); // ← this should call your wrapper method
+        String[] requisitionColumns = purchaseManagerController.getRequisitionTableColumns();
+
+        JPanel tablePanel;
+        if (requisitionData == null || requisitionData.length == 0) {
+            tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Requisitions Available");
+        } else {
+            tablePanel = TableHelper.createTable(requisitionData, requisitionColumns);
+            tablePanel.setPreferredSize(new Dimension(1000, 500)); // Allow scroll horizontally if needed
+        }
+
+        // Wrap in JScrollPane
+        JScrollPane scrollPane = new JScrollPane(tablePanel);
+        scrollPane.setBounds(50, 120, 800, 500);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+
+        p.add(scrollPane);
         return p;
     }
+
     private JPanel createGeneratePurchaseOrderPanel() {
         JPanel p = new JPanel(null);
-        p.setBackground(new Color(36, 42, 64));
+        p.setBackground(UITheme.MEDIUM_BLUE);
         p.add(createTopBar("Generate Purchase Order"));
 
-        // Table Panel for Purchase Orders (Initially visible)
-        PurchaseManagerController controller = new PurchaseManagerController(new ItemController(), new SupplierController());
-        Object[][] purchaseOrderData = controller.loadPurchaseOrders(true);  // Correct variable name
-        String[] purchaseOrderColumns = controller.getPurchaseOrderTableColumns(true);  // Correct variable name
+        Object[][] purchaseOrderData = purchaseManagerController.loadPurchaseOrders(true);
+        String[] purchaseOrderColumns = purchaseManagerController.getPurchaseOrderTableColumns(true);
 
-        // Table Panel
         JPanel tablePanel;
         if (purchaseOrderData == null || purchaseOrderData.length == 0) {
             tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
         } else {
-            tablePanel = TableHelper.createTable(purchaseOrderData, purchaseOrderColumns);  // Use the corrected names
+            tablePanel = TableHelper.createTable(purchaseOrderData, purchaseOrderColumns);
         }
 
-        // Adjust the position & size of the table
-        tablePanel.setBounds(20, 160, 860, 460);  // Adjusted size for the table
-        tablePanel.setPreferredSize(new Dimension(860, 460)); // Set preferred size to match bounds
+        tablePanel.setPreferredSize(new Dimension(1000, 500));
+
         JScrollPane scrollPane = new JScrollPane(tablePanel);
-        scrollPane.setBounds(20, 160, 860, 460);  // Add the scrollbar with the same bounds as the table
+        scrollPane.setBounds(20, 160, 860, 460);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+
         p.add(scrollPane);
 
-        // Create button to show form
+        // Assign to class field if you want to access this scrollPane later
+        generatePurchaseOrderScrollPane = scrollPane;
+
         JButton btnCreatePOForm = new JButton("Create New Purchase Order");
-        btnCreatePOForm.setBounds(350, 100, 200, 30);
+        btnCreatePOForm.setBounds(350, 100, 240, 30);
         btnCreatePOForm.setFocusPainted(false);
-        btnCreatePOForm.setBackground(new Color(88, 101, 242));
+        btnCreatePOForm.setBackground(UITheme.HIGHLIGHT_BLUE);
         btnCreatePOForm.setForeground(Color.WHITE);
         btnCreatePOForm.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-        // Action to show the popup form
         btnCreatePOForm.addActionListener(e -> {
-            // Create and show the form as a JDialog popup
-            JDialog createPOFormDialog = new JDialog((Frame) null, "Create New Purchase Order", true);
-            createPOFormDialog.setSize(800, 350);
-            createPOFormDialog.setLocationRelativeTo(null); // Center on screen
+            JDialog createPOFormDialog = new JDialog(this, "Create New Purchase Order", true);
+            JPanel formPanel = createFormPanel();
+            formPanel.setPreferredSize(new Dimension(800, 700));
+
+            JScrollPane scrollPaneForForm = new JScrollPane(formPanel);
+            scrollPaneForForm.setPreferredSize(new Dimension(800, 500));
+            scrollPaneForForm.setBorder(BorderFactory.createEmptyBorder());
+            scrollPaneForForm.getVerticalScrollBar().setUnitIncrement(16);
+
+            createPOFormDialog.setSize(820, 550);
+            createPOFormDialog.setLocationRelativeTo(null);
             createPOFormDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            createPOFormDialog.add(createFormPanel()); // Add the form to the dialog
+            createPOFormDialog.add(scrollPaneForForm);
             createPOFormDialog.setVisible(true);
         });
 
         p.add(btnCreatePOForm);
+
         return p;
     }
 
-    private JPanel createFormPanel() {
+    public JPanel createFormPanel(){
+        return  createPOFormPanel(false, null, null, null, null, 1, null, null, null, null);
+    }
+
+    public JPanel createEditFormPanel(String poID, String date, String requisition, String item, int quantity,
+                                      String supplier, String status, String createdBy, String approvedBy) {
+        return createPOFormPanel(true, poID, date, requisition, item, quantity, supplier, status, createdBy, approvedBy);
+    }
+
+    public JPanel createPOFormPanel(
+            boolean isEditMode,
+            String poID,
+            String date,
+            String requisition,
+            String item,
+            int quantity,
+            String supplier,
+            String status,
+            String createdBy,
+            String approvedBy
+    ) {
+        PurchaseOrderController controller = new PurchaseOrderController();
+
         JPanel formPanel = new JPanel(null);
-        formPanel.setBackground(new Color(36, 42, 64));
+        formPanel.setBackground(UITheme.DARK_BLUE);
 
-        // PO ID
-        JLabel lblPOID = new JLabel("Purchase Order ID:");
-        lblPOID.setForeground(Color.WHITE);
-        lblPOID.setBounds(50, 10, 140, 25);
-        formPanel.add(lblPOID);
+        JLabel lblPOID = createLabel("Purchase Order ID:", 50, 10);
+        JTextField tfPOID = styleTextField(new JTextField(isEditMode ? poID : "Auto-Generated if left blank"));
+        tfPOID.setBounds(50, 35, 300, 35);
+        tfPOID.setEditable(!isEditMode);
 
-        JTextField tfPOID = new JTextField("Auto-Generated if left blank");
-        tfPOID.setBounds(200, 10, 200, 30);
-        tfPOID.setForeground(Color.GRAY);
-        formPanel.add(tfPOID);
+        // ---- Label ----
+        JLabel lblDate = createLabel("Date (YYYY-MM-DD):", 50, 80);
 
-        // Date
-        JLabel lblDate = new JLabel("Date (YYYY-MM-DD):");
-        lblDate.setForeground(Color.WHITE);
-        lblDate.setBounds(420, 10, 140, 25);
-        formPanel.add(lblDate);
+        JTextField tfDate = styleTextField(new JTextField(
+                isEditMode ? date : java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        ));
+        tfDate.setBounds(50, 105, 270, 35);
 
-        JTextField tfDate = new JTextField(LocalDate.now()
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        tfDate.setBounds(580, 10, 200, 30);
-        formPanel.add(tfDate);
+        JButton btnCalendar = new JButton("📅");
+        btnCalendar.setBounds(325, 105, 25, 35);
+        btnCalendar.setFocusPainted(false);
+        btnCalendar.setBorderPainted(false);
+        btnCalendar.setBackground(UITheme.LIGHT_BLUE);
+        btnCalendar.setForeground(Color.WHITE);
 
-        // Requisition
-        JLabel lblReq = new JLabel("Requisition:");
-        lblReq.setForeground(Color.WHITE);
-        lblReq.setBounds(50, 50, 140, 25);
-        formPanel.add(lblReq);
+        btnCalendar.addActionListener(e -> {
+            // Initialize date model from text field
+            UtilDateModel model = new UtilDateModel();
+            try {
+                model.setValue(java.sql.Date.valueOf(tfDate.getText()));
+            } catch (Exception ex) {
+                model.setValue(new java.util.Date());
+            }
+            model.setSelected(true);
 
-        JComboBox<String> cbReq = new JComboBox<>();
-        for (String req : PurchaseManagerController.loadRequisitionOptions()) {
+            Properties p = new Properties();
+            p.put("text.today", "Today");
+            p.put("text.month", "Month");
+            p.put("text.year", "Year");
+
+            JDatePanelImpl datePanel = new JDatePanelImpl(model, p);
+
+            // Create popup menu for calendar
+            JPopupMenu popup = new JPopupMenu();
+            popup.setLayout(new BorderLayout());
+            popup.add(datePanel, BorderLayout.CENTER);
+
+            // On date selected, update tfDate and close popup
+            datePanel.addActionListener(ev -> {
+                java.util.Date selectedDate = (java.util.Date) model.getValue();
+                if (selectedDate != null) {
+                    String formatted = new java.text.SimpleDateFormat("yyyy-MM-dd").format(selectedDate);
+                    tfDate.setText(formatted);
+                }
+                popup.setVisible(false); // close after selection
+            });
+
+            // Show below 📅 button
+            popup.show(btnCalendar, 0, btnCalendar.getHeight());
+        });
+
+        JLabel lblReq = createLabel("Requisition:", 50, 150);
+        JComboBox<String> cbReq = styleComboBox(new JComboBox<>());
+        cbReq.setBounds(50, 175, 300, 35);
+        cbReq.addItem("Direct Order (No Requisition)");
+        for (String req : PurchaseOrderController.loadRequisitionOptions()) {
             cbReq.addItem(req);
         }
-        cbReq.setBounds(200, 50, 200, 30);
-        formPanel.add(cbReq);
+        cbReq.setSelectedItem(isEditMode && !requisition.equals("Direct") ? requisition : "Direct Order (No Requisition)");
 
-        // Item
-        JLabel lblItem = new JLabel("Item:");
-        lblItem.setForeground(Color.WHITE);
-        lblItem.setBounds(420, 50, 140, 25);
-        formPanel.add(lblItem);
-
-        JComboBox<String> cbItem = new JComboBox<>();
-        for (String item : PurchaseManagerController.loadItemOptions()) {
-            cbItem.addItem(item);
+        JLabel lblItem = createLabel("Item:", 50, 220);
+        JComboBox<String> cbItem = styleComboBox(new JComboBox<>());
+        cbItem.setBounds(50, 245, 300, 35);
+        for (String i : PurchaseOrderController.loadItemOptions()) {
+            cbItem.addItem(i);
         }
-        cbItem.setBounds(580, 50, 200, 30);
-        formPanel.add(cbItem);
+        if (isEditMode) cbItem.setSelectedItem(item);
 
-        // Quantity
-        JLabel lblQty = new JLabel("Quantity:");
-        lblQty.setForeground(Color.WHITE);
-        lblQty.setBounds(50, 90, 140, 25);
-        formPanel.add(lblQty);
+        JLabel lblQty = createLabel("Quantity:", 50, 290);
+        JSpinner spQty = createStyledSpinner(50, 315);
+        if (isEditMode) spQty.setValue(quantity);
 
-        JSpinner spQty = new JSpinner(new SpinnerNumberModel(1, 1, Integer.MAX_VALUE, 1));
-        spQty.setBounds(200, 90, 200, 30);
-        formPanel.add(spQty);
-
-        // Supplier
-        JLabel lblSup = new JLabel("Supplier:");
-        lblSup.setForeground(Color.WHITE);
-        lblSup.setBounds(420, 90, 140, 25);
-        formPanel.add(lblSup);
-
-        JComboBox<String> cbSup = new JComboBox<>();
-        for (String supplier : PurchaseManagerController.loadSupplierOptions()) {
-            cbSup.addItem(supplier);
+        JLabel lblSup = createLabel("Supplier:", 50, 360);
+        JComboBox<String> cbSup = styleComboBox(new JComboBox<>());
+        cbSup.setBounds(50, 385, 300, 35);
+        for (String sup : PurchaseOrderController.loadSupplierOptions()) {
+            cbSup.addItem(sup);
         }
-        cbSup.setBounds(580, 90, 200, 30);
-        formPanel.add(cbSup);
+        if (isEditMode) cbSup.setSelectedItem(supplier);
 
-        // Create button
-        JButton btnCreate = new JButton("Create Purchase Order");
-        btnCreate.setBounds(350, 130, 200, 35);
-        btnCreate.setFocusPainted(false);
-        btnCreate.setBackground(new Color(88, 101, 242));
-        btnCreate.setForeground(Color.WHITE);
-        formPanel.add(btnCreate);
+        JTextField tfSupDisplay = styleTextField(new JTextField());
+        tfSupDisplay.setBounds(50, 245, 300, 35);
+        tfSupDisplay.setEditable(false);
+        tfSupDisplay.setVisible(false);
 
-        btnCreate.addActionListener(e -> {
-            // 1. Determine PO ID
-            String poID = tfPOID.getText().trim();
-            if (poID.equals("Auto-Generated if left blank") || poID.isEmpty()) {
-                poID = PurchaseManagerController.generateNewPOID();
-            }
+        JButton btnSubmit = createSubmitButton(isEditMode ? "Update Purchase Order" : "Create Purchase Order", 50, 440);
 
-            String date            = tfDate.getText().trim();
-            String requisition     = (String) cbReq.getSelectedItem();
-            String itemDisplay     = (String) cbItem.getSelectedItem();
-            String qty             = spQty.getValue().toString();
-            String supplierDisplay = (String) cbSup.getSelectedItem();
+        final String[] statusWrapper = {status != null ? status : "Pending"};
+        final String type = "purchase";
+        final String[] extraStatusWrapper = {status != null ? status : "Pending"};
 
-            // 3. Save to file
-            boolean saved = PurchaseManagerController.saveNewPO(
-                    poID, date, requisition, itemDisplay, qty, supplierDisplay
-            );
+        // Requisition logic
+        cbReq.addActionListener(e -> {
+            boolean isDirect = cbReq.getSelectedItem().equals("Direct Order (No Requisition)");
 
-            if (saved) {
-                JOptionPane.showMessageDialog(formPanel,
-                        "Purchase Order created with ID: " + poID);
+            lblItem.setVisible(isDirect);
+            cbItem.setVisible(isDirect);
+            lblQty.setVisible(isDirect);
+            spQty.setVisible(isDirect);
 
-                // Close dialog
-                Window w = SwingUtilities.getWindowAncestor(formPanel);
-                if (w != null) w.dispose();
+            cbSup.setVisible(isDirect);
+            tfSupDisplay.setVisible(!isDirect);
 
-                // Get the correct PurchaseManagerView
-                Window parentWindow = SwingUtilities.getWindowAncestor(formPanel);
-                if (parentWindow instanceof PurchaseManagerView) {
-                    PurchaseManagerView view = (PurchaseManagerView) parentWindow;
-                    view.firePropertyChange("PO_CREATED", false, true);  // Notify the main window
-                }
+            if (!isDirect) {
+                String autoSup = controller.getSupplierForRequisition((String) cbReq.getSelectedItem());
+                tfSupDisplay.setText(autoSup);
+                lblSup.setBounds(50, 220, 300, 20);
+                tfSupDisplay.setBounds(50, 245, 300, 35);
             } else {
-                JOptionPane.showMessageDialog(formPanel,
-                        "Failed to save Purchase Order.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                cbSup.removeAllItems();
+                for (String sup : PurchaseOrderController.loadSupplierOptions()) {
+                    cbSup.addItem(sup);
+                }
+                cbSup.setSelectedItem(isEditMode ? supplier : null);
+                lblSup.setBounds(50, 360, 300, 20);
+                cbSup.setBounds(50, 385, 300, 35);
             }
         });
+
+        // Trigger initial state
+        cbReq.setSelectedItem(isEditMode && !requisition.equals("Direct") ? requisition : "Direct Order (No Requisition)");
+        cbReq.getActionListeners()[0].actionPerformed(null); // force apply logic
+
+        // Submit button handler
+        btnSubmit.addActionListener(e -> {
+            String actualPOID = tfPOID.getText().trim();
+            if (!isEditMode && (actualPOID.isEmpty() || actualPOID.equals("Auto-Generated if left blank"))) {
+                actualPOID = controller.generateNewPOID();
+            }
+
+            String updatedDate = tfDate.getText().trim();
+            String updatedReq;
+            String updatedItem;
+            int updatedQty;
+            String updatedSup;
+            boolean isDirect = cbReq.getSelectedItem().equals("Direct Order (No Requisition)");
+
+            if (isDirect) {
+                updatedReq = "Direct";
+                updatedItem = (String) cbItem.getSelectedItem();
+                updatedQty = (int) spQty.getValue();
+                updatedSup = (String) cbSup.getSelectedItem();
+                statusWrapper[0] = "Pending";
+                extraStatusWrapper[0] = "Pending";
+            } else {
+                updatedReq = (String) cbReq.getSelectedItem();
+                PurchaseOrderController.RequisitionDetails rd = controller.getRequisitionDetails(updatedReq);
+                if (rd == null) {
+                    JOptionPane.showMessageDialog(formPanel, "Requisition not found.");
+                    return;
+                }
+                updatedItem = rd.item;
+                updatedQty = rd.quantity;
+                updatedSup = rd.supplier;
+                statusWrapper[0] = rd.status;
+                extraStatusWrapper[0] = rd.status;
+            }
+
+            try {
+                boolean success;
+                if (isEditMode) {
+                    success = controller.updatePurchaseOrder(
+                            actualPOID, updatedDate, updatedReq, updatedItem, updatedQty,
+                            updatedSup, statusWrapper[0], type, extraStatusWrapper[0]
+                    );
+                } else {
+                    success = controller.createPurchaseOrder(
+                            actualPOID, updatedDate, updatedReq, updatedItem, updatedQty,
+                            updatedSup, statusWrapper[0], type, extraStatusWrapper[0]
+                    );
+                }
+
+                if (success) {
+                    JOptionPane.showMessageDialog(formPanel, isEditMode ? "Purchase Order updated." : "Purchase Order created with ID: " + actualPOID);
+                    Window w = SwingUtilities.getWindowAncestor(formPanel);
+                    if (w != null) w.dispose();
+                    updateTables();
+                } else {
+                    JOptionPane.showMessageDialog(formPanel, "Failed to " + (isEditMode ? "update" : "create") + " Purchase Order.");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(formPanel, "Error occurred during " + (isEditMode ? "update." : "creation."));
+            }
+        });
+
+        // Add components
+        formPanel.add(lblPOID);
+        formPanel.add(tfPOID);
+        formPanel.add(lblDate);
+        formPanel.add(tfDate);
+        formPanel.add(btnCalendar);
+        formPanel.add(lblReq);
+        formPanel.add(cbReq);
+        formPanel.add(lblItem);
+        formPanel.add(cbItem);
+        formPanel.add(lblQty);
+        formPanel.add(spQty);
+        formPanel.add(lblSup);
+        formPanel.add(cbSup);
+        formPanel.add(tfSupDisplay);
+        formPanel.add(btnSubmit);
 
         return formPanel;
     }
 
-    private void refreshGeneratePOTable() {
-        // 1. Re-load purchase orders with actions column (true)
-        PurchaseManagerController ctrl = new PurchaseManagerController(
-                new ItemController(), new SupplierController()
-        );
-        Object[][] data = ctrl.loadPurchaseOrders(true);
-        String[] cols = ctrl.getPurchaseOrderTableColumns(true);
-
-        // 2. Build a fresh panel
-        JPanel newGeneratePanel = createGeneratePurchaseOrderPanel();
-
-        // 3. Replace the old card
-        mainPanel.remove(4);  // "Generate Purchase Order" is the 5th card (0-based index)
-        mainPanel.add(newGeneratePanel, "Generate Purchase Order");
-
-        cardLayout.show(mainPanel, "Generate Purchase Order");
-
-        mainPanel.revalidate();
-        mainPanel.repaint();
+    private JLabel createLabel(String text, int x, int y) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        label.setForeground(UITheme.TEXT_WHITE);
+        label.setBounds(x, y, 200, 25);
+        return label;
     }
 
-    private void refreshViewPOTable() {
-        // 1. Re-load purchase orders without actions column (false)
-        PurchaseManagerController ctrl = new PurchaseManagerController(
-                new ItemController(), new SupplierController()
-        );
-        Object[][] data = ctrl.loadPurchaseOrders(false);
-        String[] cols = ctrl.getPurchaseOrderTableColumns(false);
+    private JSpinner createStyledSpinner(int x, int y) {
+        Font fieldFont = new Font("SansSerif", Font.PLAIN, 14);
+        Color fieldBackground = (UITheme.MEDIUM_BLUE);
+        Color borderColor = (UITheme.DARK_GRAY);
 
-        JPanel newViewPanel = createViewPurchaseOrderPanel();
-
-        mainPanel.remove(5);  // "View Purchase Orders" is the 6th card
-        mainPanel.add(newViewPanel, "View Purchase Orders");
-
-        cardLayout.show(mainPanel, "View Purchase Orders");
-
-        mainPanel.revalidate();
-        mainPanel.repaint();
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 1, Integer.MAX_VALUE, 1));
+        spinner.setFont(fieldFont);
+        JComponent editor = spinner.getEditor();
+        JFormattedTextField textField = ((JSpinner.DefaultEditor) editor).getTextField();
+        textField.setBackground(fieldBackground);
+        textField.setForeground(UITheme.TEXT_WHITE);
+        textField.setCaretColor(UITheme.TEXT_WHITE);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        spinner.setBounds(x, y, 300, 35);
+        return spinner;
     }
 
+    private JButton createSubmitButton(String text, int x, int y) {
+        JButton button = new JButton(text);
+        button.setBounds(x, y, 300, 40);
+        button.setFocusPainted(false);
+        button.setBackground(UITheme.HIGHLIGHT_BLUE);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        return button;
+    }
+
+    // Styles - no change needed
+    private JTextField styleTextField(JTextField field) {
+        Font fieldFont = new Font("SansSerif", Font.PLAIN, 14);
+        Color fieldBackground = (UITheme.DARK_BLUE);
+        Color borderColor = (UITheme.DARK_GRAY);
+
+        field.setFont(fieldFont);
+        field.setBackground(fieldBackground);
+        field.setForeground(Color.WHITE);
+        field.setCaretColor(Color.WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        return field;
+    }
+
+    private JComboBox<String> styleComboBox(JComboBox<String> box) {
+        Font fieldFont = new Font("SansSerif", Font.PLAIN, 14);
+        Color fieldBackground = (UITheme.MEDIUM_BLUE);
+        Color borderColor = (UITheme.DARK_GRAY );
+
+        box.setFont(fieldFont);
+        box.setBackground(fieldBackground);
+        box.setForeground(Color.WHITE);
+        box.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        box.setFocusable(false);
+        return box;
+    }
 
     private JPanel createViewPurchaseOrderPanel() {
         JPanel p = new JPanel(null);
-        p.setBackground(new Color(36, 42, 64));
+        p.setBackground(UITheme.MEDIUM_BLUE);
         p.add(createTopBar("View Purchase Orders"));
 
-        // Initialize the controller
-        PurchaseManagerController controller = new PurchaseManagerController(new ItemController(), new SupplierController());
+        Object[][] purchaseOrderData = purchaseManagerController.loadPurchaseOrders(false);
+        String[] purchaseOrderColumns = purchaseManagerController.getPurchaseOrderTableColumns(false);
 
-        // Load Purchase Orders for the "View Purchase Orders" page (No actions column)
-        Object[][] purchaseOrderData = controller.loadPurchaseOrders(false);
-        String[] purchaseOrderColumns = controller.getPurchaseOrderTableColumns(false);
-
-        // Create table based on fetched data
         JPanel tablePanel;
-        if (purchaseOrderData != null && purchaseOrderData.length > 0) {
-            tablePanel = TableHelper.createTable(purchaseOrderData, purchaseOrderColumns);
+        if (purchaseOrderData == null || purchaseOrderData.length == 0) {
+            tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
         } else {
-            tablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Purchase Orders Available");
+            tablePanel = TableHelper.createTable(purchaseOrderData, purchaseOrderColumns);
         }
-        tablePanel.setBounds(50, 120, 800, 500); // Adjust table position and size
-        p.add(tablePanel);
+
+        // Set preferred size bigger than scroll pane to enable horizontal scrolling
+        tablePanel.setPreferredSize(new Dimension(1000, 500));
+
+        JScrollPane scrollPane = new JScrollPane(tablePanel);
+        scrollPane.setBounds(20, 160, 860, 460);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+
+        p.add(scrollPane);
+
+        // Assign to class field if you want to access this scrollPane later
+        viewPurchaseOrderScrollPane = scrollPane;
 
         return p;
     }
+
+    public void updateTables() {
+        if (purchaseOrderController == null || purchaseManagerController == null) {
+            System.err.println("Controllers are not initialized!");
+            return;
+        }
+
+        // Load fresh purchase order data with full status details
+        Object[][] fullData = purchaseManagerController.loadPurchaseOrders(true);
+
+        // Columns for Generate Purchase Order table (with Actions like Edit/Delete buttons)
+        String[] columnsWithActions = purchaseManagerController.getPurchaseOrderTableColumns(true);
+
+        JPanel generateTablePanel;
+        if (fullData != null && fullData.length > 0) {
+            generateTablePanel = TableHelper.createTable(fullData, columnsWithActions);
+        } else {
+            generateTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Purchase Orders Available");
+        }
+
+        if (generatePurchaseOrderScrollPane != null) {
+            generatePurchaseOrderScrollPane.setViewportView(generateTablePanel);
+        }
+
+        // Columns for View Purchase Order table (without Actions)
+        String[] columnsWithoutActions = purchaseManagerController.getPurchaseOrderTableColumns(false);
+
+        JPanel viewTablePanel;
+        if (fullData != null && fullData.length > 0) {
+            viewTablePanel = TableHelper.createTable(fullData, columnsWithoutActions);
+        } else {
+            viewTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No Purchase Orders Available");
+        }
+
+        if (viewPurchaseOrderScrollPane != null) {
+            viewPurchaseOrderScrollPane.setViewportView(viewTablePanel);
+        }
+    }
+
+    private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+        private final java.text.SimpleDateFormat dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd");
+
+        @Override
+        public Object stringToValue(String text) throws java.text.ParseException {
+            return dateFormatter.parse(text);
+        }
+
+        @Override
+        public String valueToString(Object value) throws java.text.ParseException {
+            if (value != null) {
+                java.util.Calendar cal = (java.util.Calendar) value;
+                return dateFormatter.format(cal.getTime());
+            }
+            return "";
+        }
+    }
+
+
 }

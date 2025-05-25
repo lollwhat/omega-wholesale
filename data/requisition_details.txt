@@ -1,3 +1,0 @@
-PR001,2025-04-20,2025-05-01,Laptop,20,Tech Solutions Inc.,Pending,PM001
-PR002,2025-04-21,2025-05-03,Tablet,30,Tech Solutions Inc.,Approved,PM002
-PR003,2025-04-22,2025-05-04,Monitor,15,Computer Accessories Ltd.,Pending,PM001

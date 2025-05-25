@@ -76,6 +76,7 @@ public class AuthController extends CRUDController<User>{
             case "SM":
                 SalesManagerView SalesManager = new SalesManagerView();
             case "PM":
+                PurchaseManagerView PurchaseManager= new PurchaseManagerView(user);
                 break;
             case "IM":
                 InventoryManagerView InventoryManager = new InventoryManagerView(user);
