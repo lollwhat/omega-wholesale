@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class UserController{
-    FileController user_details = new FileController("data/user_details.txt");
     List<String> userData = FileController.getFile();
 
     public DefaultTableModel addUserData(String[] columnNames){
@@ -40,21 +39,5 @@ public class UserController{
         }
 
         return model;
-    }
-
-    public void addUser(){
-
-    }
-
-    public void editUser(){
-
-    }
-
-    public void deleteUser(){
-
-    }
-
-    public void switchUserStatus(){
-
     }
 }
