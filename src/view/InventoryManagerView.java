@@ -946,9 +946,11 @@ public class InventoryManagerView extends JFrame {
         String password = "inventory123";
         String firstName = "John";
         String lastName = "Doe";
+        String email = "johndoe@email.com";
+        String status = "Active";
         String currentTimeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-        User testView = new User(userID, username, password, firstName, lastName, currentTimeStamp, currentTimeStamp) {
+        User testView = new User(userID, username, password, firstName, lastName, email, status, currentTimeStamp, currentTimeStamp) {
             @Override
             public String getUsername() {
                 return "testView";
