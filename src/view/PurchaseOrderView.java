@@ -1,0 +1,447 @@
+package view;
+
+import controller.PurchaseOrderController;
+import controller.SupplierController;
+import model.PurchaseOrder;
+import model.PurchaseOrderItem;
+import util.table.GenericModelHelper;
+import util.table.mappers.PurchaseOrderRowMapper;
+// import view.forms.AddPurchaseOrderForm; // Placeholder for when this form is created
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.ArrayList;
+
+public class PurchaseOrderView extends JFrame {
+    private final Color darkBlue = UITheme.DARK_BLUE;
+    private final Color mediumBlue = UITheme.MEDIUM_BLUE;
+    private final Color lightBlue = UITheme.LIGHT_BLUE;
+    protected final Color verylightBlue = UITheme.VERY_LIGHT_BLUE;
+    private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE;
+    private final Color textWhite = UITheme.TEXT_WHITE;
+
+    private JTable poTable;
+    private DefaultTableModel poTableModel;
+    private PurchaseOrderController poController;
+    private PurchaseOrderRowMapper poRowMapper;
+    private SupplierController supplierController;
+
+    private final String[] poColumnNames = {
+            "PO ID", "PR ID", "Notes", "Supplier", "Status",
+            "Created At", "Created By", "Updated At", "Updated By",
+            "Received At", "Received By"
+    };
+    private static final String[] PO_STATUS_DIALOG_OPTIONS = {"Processing", "Received", "Cancelled"};
+    private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
+
+
+    public PurchaseOrderView() {
+        setTitle("Purchase Order Management");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        poController = new PurchaseOrderController();
+        supplierController = new SupplierController();
+        poRowMapper = new PurchaseOrderRowMapper(supplierController);
+
+        add(createPurchaseOrderPanel());
+
+        setMinimumSize(new Dimension(1100, 600));
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    public JPanel createPurchaseOrderPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(mediumBlue);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(mediumBlue);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel titleLabel = new JLabel("List of Purchase Order");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(highlightBlue);
+
+//        JButton createPOButton = createActionButton("Create PO (Placeholder)",
+//                _ -> JOptionPane.showMessageDialog(this, "PO Creation process to be implemented (e.g., from approved PRs)."));
+//        createPOButton.setFont(new Font("Arial", Font.BOLD, 14));
+//        createPOButton.setBackground(highlightBlue);
+
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(mediumBlue);
+        titlePanel.add(titleLabel);
+
+//        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+//        buttonPanel.setBackground(mediumBlue);
+//        buttonPanel.add(createPOButton);
+
+        headerPanel.add(titlePanel, BorderLayout.NORTH);
+//        headerPanel.add(buttonPanel, BorderLayout.CENTER);
+
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(darkBlue);
+        tablePanel.add(createPOTable(), BorderLayout.CENTER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
+        refreshTable();
+        return mainPanel;
+    }
+
+    private void showCreatePOForm(String prId) {
+        JOptionPane.showMessageDialog(this, "Functionality to create PO from PR " + prId + " to be implemented.");
+    }
+
+    private void showEditPurchaseOrderForm(String poIdToEdit){
+        JOptionPane.showMessageDialog(this, "Functionality to edit PO " + poIdToEdit + " to be implemented via a dedicated PO edit form.");
+        showPurchaseOrderDetailsPopup(poIdToEdit);
+    }
+
+
+    public void refreshTable() {
+        SwingUtilities.invokeLater(() -> {
+            if (poTableModel == null || poController == null || poRowMapper == null) {
+                System.err.println("PurchaseOrderView.refreshTable(): Components not initialized.");
+                if (poController == null) poController = new PurchaseOrderController();
+                if (supplierController == null) supplierController = new SupplierController();
+                if (poRowMapper == null) poRowMapper = new PurchaseOrderRowMapper(supplierController);
+
+                if (poTableModel == null && poTable != null && poTable.getModel() instanceof DefaultTableModel) {
+                    poTableModel = (DefaultTableModel) poTable.getModel();
+                } else if (poTableModel == null) {
+                    System.err.println("POTableModel is null. Refresh aborted."); return;
+                }
+            }
+
+            poTableModel.setRowCount(0);
+            this.poController = new PurchaseOrderController();
+            List<PurchaseOrder> poHeaders = poController.getAllPurchaseOrderHeaders();
+
+            if (poHeaders != null && !poHeaders.isEmpty()) {
+                for (PurchaseOrder poHeaderObj : poHeaders) {
+                    if (poHeaderObj == null) continue;
+                    String headerCsvLine = poHeaderObj.toCSV();
+                    String[] fields = headerCsvLine.split(",");
+                    Object[] rowData = poRowMapper.mapFieldsToRow(fields, poTableModel.getColumnCount());
+                    if (rowData != null) {
+                        poTableModel.addRow(rowData);
+                    }
+                }
+            } else {
+                System.out.println("No Purchase Orders to display.");
+            }
+        });
+    }
+
+    private JScrollPane createPOTable() {
+        if (this.supplierController == null) this.supplierController = new SupplierController();
+        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController);
+
+        List<String> initialEmptyData = new ArrayList<>();
+        this.poTableModel = GenericModelHelper.createGenericTableModel(
+                initialEmptyData,
+                this.poColumnNames,
+                this.poRowMapper,
+                GenericModelHelper.LAST_COLUMN_EDITABLE
+        );
+
+        this.poTable = new JTable(this.poTableModel);
+        poTable.setBackground(darkBlue);
+        poTable.setForeground(textWhite);
+        poTable.setGridColor(new Color(50, 60, 80));
+        poTable.setRowHeight(45);
+        poTable.setFont(new Font("Arial", Font.PLAIN, 13));
+        poTable.getTableHeader().setBackground(new Color(150, 165, 235));
+        poTable.getTableHeader().setForeground(textWhite);
+        poTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        poTable.setSelectionBackground(new Color(60, 70, 90));
+        poTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        int colIndex = 0;
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(80);  // PO ID
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(80);  // PR ID
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(200); // Notes
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(180); // Supplier
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Status
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(150); // Created At
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Created By
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(150); // Updated At
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Updated By
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(150); // Received At
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Received By
+//        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(230); // Actions
+
+
+//        POActionButtonPanel actionPanel = new POActionButtonPanel(this.poTable);
+        int actionsColumnIndex = poColumnNames.length - 1;
+//        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellRenderer(actionPanel);
+//        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellEditor(actionPanel);
+
+        poTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    int viewRow = poTable.rowAtPoint(e.getPoint());
+                    int viewColumn = poTable.columnAtPoint(e.getPoint());
+                    if (viewRow >= 0 && viewColumn >= 0 && viewColumn != actionsColumnIndex) {
+                        int modelRow = poTable.convertRowIndexToModel(viewRow);
+                        String poId = (String) poTable.getModel().getValueAt(modelRow, 0);
+                        if (poId != null && !poId.trim().isEmpty()) {
+                            showPurchaseOrderDetailsPopup(poId);
+                        }
+                    }
+                }
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(this.poTable);
+        scrollPane.getViewport().setBackground(darkBlue);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        return scrollPane;
+    }
+
+    private JButton createActionButton(String text, ActionListener listener) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.PLAIN, 12));
+        button.setForeground(textWhite);
+        button.setBackground(lightBlue);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setMargin(new Insets(2, 5, 2, 5));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        if (listener != null) {
+            button.addActionListener(listener);
+        }
+        return button;
+    }
+
+//    class POActionButtonPanel extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
+//        private final JPanel panel;
+//        private final JTable containingTable;
+//        private int currentRow;
+//
+//        public POActionButtonPanel(JTable table) {
+//            this.containingTable = table;
+//            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
+//            panel.setOpaque(true);
+//
+//            JButton viewButton = createActionButton("View Details", e -> {
+//                fireEditingStopped();
+//                String poId = (String) containingTable.getValueAt(currentRow, 0);
+//                showPurchaseOrderDetailsPopup(poId);
+//            });
+//
+//            JButton statusButton = createActionButton("Update Status", e -> {
+//                fireEditingStopped();
+//                String poId = (String) containingTable.getValueAt(currentRow, 0);
+//                Object statusValue = containingTable.getValueAt(currentRow, 4);
+//                String currentStatusStr = (statusValue != null) ? statusValue.toString() : PO_STATUS_DIALOG_OPTIONS[0];
+//                updatePOStatusDialog(poId, currentStatusStr);
+//            });
+//
+//            panel.add(viewButton);
+//            panel.add(statusButton);
+//        }
+//
+//        @Override
+//        public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
+//            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? darkBlue : new Color(40, 50, 70)));
+//            return panel;
+//        }
+//        @Override
+//        public Component getTableCellEditorComponent(JTable tbl, Object val, boolean isSel, int r, int c) {
+//            this.currentRow = r;
+//            panel.setBackground(tbl.getSelectionBackground());
+//            return panel;
+//        }
+//        @Override public Object getCellEditorValue() { return ""; }
+//        @Override public boolean stopCellEditing() { return super.stopCellEditing(); }
+//    }
+
+    private void updatePOStatusDialog(String poId, String currentStatusStr) {
+        JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        int currentStatusIndex = 0;
+        for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
+            if(PO_STATUS_DIALOG_OPTIONS[i].equalsIgnoreCase(currentStatusStr)){
+                currentStatusIndex = i;
+                break;
+            }
+        }
+
+        String newStatusStr = (String) JOptionPane.showInputDialog(
+                parentDialogFrame,
+                "Select new status for PO: " + poId,
+                "Update PO Status",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                PO_STATUS_DIALOG_OPTIONS,
+                PO_STATUS_DIALOG_OPTIONS[currentStatusIndex]
+        );
+
+        if (newStatusStr != null) {
+            int newStatusInt = -1;
+            for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
+                if(PO_STATUS_DIALOG_OPTIONS[i].equals(newStatusStr)){
+                    newStatusInt = i;
+                    break;
+                }
+            }
+
+            if (newStatusInt != -1) {
+                try {
+                    String userId = controller.SessionController.getInstance().getUserId();
+                    this.poController = new PurchaseOrderController();
+                    boolean success = poController.updatePurchaseOrderStatus(poId, newStatusInt, userId);
+                    if (success) {
+                        JOptionPane.showMessageDialog(parentDialogFrame, "PO " + poId + " status updated to " + newStatusStr + ".", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        refreshTable();
+                    } else {
+                        JOptionPane.showMessageDialog(parentDialogFrame, "Failed to update status for PO " + poId + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(parentDialogFrame, "Error updating PO status: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+    private void showPurchaseOrderDetailsPopup(String poId) {
+        JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        this.poController = new PurchaseOrderController();
+        PurchaseOrder po = poController.getFullPurchaseOrderById(poId);
+        if (po == null) {
+            JOptionPane.showMessageDialog(parentDialogFrame, "Could not retrieve details for PO ID: " + poId, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JDialog detailDialog = new JDialog(parentDialogFrame, "Purchase Order Details: " + poId, true);
+        detailDialog.setLayout(new BorderLayout(10, 10));
+        detailDialog.getContentPane().setBackground(mediumBlue);
+
+        JPanel mainDetailPanel = new JPanel();
+        mainDetailPanel.setLayout(new BoxLayout(mainDetailPanel, BoxLayout.Y_AXIS));
+        mainDetailPanel.setBackground(mediumBlue);
+        mainDetailPanel.setBorder(BorderFactory.createEmptyBorder(15,15,15,15));
+
+        JPanel headerDetailsPanel = new JPanel(new GridLayout(0, 2, 8, 8));
+        headerDetailsPanel.setBackground(mediumBlue);
+        headerDetailsPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(lightBlue), "Header Information",
+                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                javax.swing.border.TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 14), textWhite));
+
+        addDetailRow(headerDetailsPanel, "PO ID:", po.getPoId());
+        addDetailRow(headerDetailsPanel, "PR ID:", po.getPrId());
+        addDetailRow(headerDetailsPanel, "Notes:", po.getNotes());
+
+        String supplierDisplay = "N/A";
+        if (po.getSupplierId() != null && !po.getSupplierId().isEmpty()) {
+            if (supplierController == null) supplierController = new SupplierController(); else this.supplierController = new SupplierController();
+            String supData = supplierController.getOneWithId(po.getSupplierId());
+            if (supData != null) {
+                String[] supParts = supData.split(",");
+                supplierDisplay = supParts[0] + (supParts.length > 1 ? " - " + supParts[1] : "");
+            } else {
+                supplierDisplay = po.getSupplierId() + " (Details not found)";
+            }
+        }
+        addDetailRow(headerDetailsPanel, "Supplier:", supplierDisplay);
+        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController); // Ensure mapper is init
+        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus()));
+        addDetailRow(headerDetailsPanel, "Created At:", po.getCreatedAt());
+        addDetailRow(headerDetailsPanel, "Created By:", po.getCreatedBy());
+        addDetailRow(headerDetailsPanel, "Updated At:", po.getUpdatedAt());
+        addDetailRow(headerDetailsPanel, "Updated By:", po.getUpdatedBy());
+        addDetailRow(headerDetailsPanel, "Received At:", po.getReceivedAt() != null ? po.getReceivedAt() : "N/A");
+        addDetailRow(headerDetailsPanel, "Received By:", po.getReceivedBy() != null ? po.getReceivedBy() : "N/A");
+
+        mainDetailPanel.add(headerDetailsPanel);
+        mainDetailPanel.add(Box.createRigidArea(new Dimension(0,15)));
+
+        JPanel itemsPanel = new JPanel(new BorderLayout());
+        itemsPanel.setBackground(mediumBlue);
+        itemsPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(lightBlue), "Ordered Items",
+                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                javax.swing.border.TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 14), textWhite));
+
+        String[] itemTableColumns = {"Item ID", "Item Code", "Item Name", "Qty", "Unit Price", "Total Price"};
+        DefaultTableModel itemsDetailTableModel = new DefaultTableModel(itemTableColumns, 0);
+        if (po.getItems() != null) {
+            for (PurchaseOrderItem item : po.getItems()) {
+                double displayPrice = (double) item.getPrice();
+                double displayTotalPrice = (double) item.getTotalPrice();
+
+                itemsDetailTableModel.addRow(new Object[]{
+                        item.getItemId(), item.getItemCode(), item.getItemName(),
+                        item.getQuantity(),
+                        CURRENCY_FORMAT.format(displayPrice),
+                        CURRENCY_FORMAT.format(displayTotalPrice)
+                });
+            }
+        }
+        JTable itemsDetailTable = new JTable(itemsDetailTableModel);
+        itemsDetailTable.setFont(new Font("Arial", Font.PLAIN, 12));
+        itemsDetailTable.setRowHeight(25);
+        JScrollPane itemsScrollPane = new JScrollPane(itemsDetailTable);
+        itemsScrollPane.setPreferredSize(new Dimension(550, 150));
+        itemsPanel.add(itemsScrollPane, BorderLayout.CENTER);
+
+        mainDetailPanel.add(itemsPanel);
+
+        JScrollPane detailScrollPane = new JScrollPane(mainDetailPanel);
+        detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        detailScrollPane.getViewport().setBackground(mediumBlue);
+
+        JButton closeButton = createActionButton("Close", _ -> detailDialog.dispose());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(mediumBlue);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
+        buttonPanel.add(closeButton);
+
+        detailDialog.add(detailScrollPane, BorderLayout.CENTER);
+        detailDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        detailDialog.setMinimumSize(new Dimension(600, 550));
+        detailDialog.pack();
+        detailDialog.setLocationRelativeTo(parentDialogFrame);
+        detailDialog.setVisible(true);
+    }
+
+    private void addDetailRow(JPanel panel, String label, String value) {
+        JLabel labelName = new JLabel(label);
+        labelName.setForeground(textWhite);
+        labelName.setFont(new Font("Arial", Font.BOLD, 13));
+        panel.add(labelName);
+
+        JLabel labelValue = new JLabel(value != null && !value.trim().isEmpty() ? value : "N/A");
+        labelValue.setForeground(verylightBlue);
+        labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+        panel.add(labelValue);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame testFrame = new JFrame("Test PO Management View");
+            testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            testFrame.getContentPane().add(new PurchaseOrderView());
+            testFrame.pack();
+            testFrame.setLocationRelativeTo(null);
+            testFrame.setVisible(true);
+        });
+    }
+}

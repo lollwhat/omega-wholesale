@@ -29,11 +29,26 @@ public abstract class CRUDController<T> {
         }
     }
 
+    public List<String> getAll(String filePath) {
+        try {
+            this.fileController = new FileController(filePath);
+            List<String> lines = FileController.getFile();
+            if (lines == null || lines.isEmpty()) {
+                System.out.println("No "+entityType.getDisplayName()+" found");
+                return null;
+            }
+            return lines;
+        } catch (Exception e) {
+            System.out.println("Error reading all "+entityType.getDisplayName()+" from file: " + e.getMessage());
+            return null;
+        }
+    }
+
     public String getOneWithId(String id) {
         try {
             String[] details = fileController.getLine(0, id);
             if (details != null) {
-                System.out.println(entityType.getDisplayName()+" found: " + String.join(",", details));
+//                System.out.println(entityType.getDisplayName()+" found: " + String.join(",", details));
                 return String.join(",", details);
             } else {
                 System.out.println(entityType.getDisplayName()+" not found");

@@ -1,7 +1,5 @@
 package model;
 
-import view.SalesManagerView;
-
 public enum RoleName {
     Administrator,
     SalesManager,
