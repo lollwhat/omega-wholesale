@@ -54,18 +54,25 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
     public void update(PurchaseOrder purchaseOrder) {
         try {
             List<String> lines = readAllLines(FILE_PATH);
-            String updatedLine = purchaseOrder.toCSV();
             String poID = purchaseOrder.getPoId();
+            String updatedLine = purchaseOrder.toCSV();
+            boolean updated = false;
 
             for (int i = 0; i < lines.size(); i++) {
                 if (lines.get(i).startsWith(poID + ",")) {
                     lines.set(i, updatedLine);
+                    updated = true;
                     break;
                 }
             }
 
-            writeAllLines(FILE_PATH, lines);
-            System.out.println("Purchase order updated successfully");
+            if (updated) {
+                writeAllLines(FILE_PATH, lines);
+                System.out.println("Purchase order updated successfully.");
+            } else {
+                System.out.println("Purchase order with ID " + poID + " not found.");
+            }
+
         } catch (Exception e) {
             System.out.println("Error updating purchase order in file: " + e.getMessage());
         }
@@ -80,10 +87,10 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
                 writeAllLines(FILE_PATH, lines);
                 System.out.println("Purchase order deleted successfully.");
             } else {
-                System.out.println("Purchase order not found: " + poID);
+                System.out.println("Purchase order with ID " + poID + " not found.");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error deleting purchase order: " + e.getMessage());
         }
     }
 
@@ -233,6 +240,23 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String formatRequisitionDisplay(String requisitionID) {
+        try (BufferedReader br = new BufferedReader(new FileReader("data/purchase_requisition.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",", -1);
+                if (parts.length >= 5 && parts[0].equals(requisitionID)) {
+                    String itemName = parts[3];  // get item name here
+                    String qty = parts[4];
+                    return requisitionID + " - " + itemName + " (" + qty + ")";
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return requisitionID; // fallback if not found
     }
 
     public static String generateNewPOID() {

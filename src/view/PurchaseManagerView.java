@@ -585,20 +585,17 @@ public class PurchaseManagerView extends JFrame {
             tablePanel = TableHelper.createTable(purchaseOrderData, purchaseOrderColumns);
         }
 
-        tablePanel.setPreferredSize(new Dimension(1000, 500));
+        tablePanel.setPreferredSize(new Dimension(1000, 500));  // same size as View Items
 
         JScrollPane scrollPane = new JScrollPane(tablePanel);
-        scrollPane.setBounds(20, 160, 860, 460);
+        scrollPane.setBounds(50, 150, 800, 500);  // match View Items bounds
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(UITheme.MEDIUM_BLUE);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
-
         p.add(scrollPane);
 
-        // Assign to class field if you want to access this scrollPane later
-        generatePurchaseOrderScrollPane = scrollPane;
 
         JButton btnCreatePOForm = new JButton("Create New Purchase Order");
         btnCreatePOForm.setBounds(350, 100, 240, 30);
@@ -722,10 +719,18 @@ public class PurchaseManagerView extends JFrame {
         JLabel lblItem = createLabel("Item:", 50, 220);
         JComboBox<String> cbItem = styleComboBox(new JComboBox<>());
         cbItem.setBounds(50, 245, 300, 35);
+
+        if (!isEditMode) {
+            cbItem.addItem("Select Item");  // Placeholder only in create mode
+        }
         for (String i : PurchaseOrderController.loadItemOptions()) {
             cbItem.addItem(i);
         }
-        if (isEditMode) cbItem.setSelectedItem(item);
+        if (isEditMode) {
+            cbItem.setSelectedItem(item);
+        } else {
+            cbItem.setSelectedIndex(0); // Select placeholder initially in create mode
+        }
 
         JLabel lblQty = createLabel("Quantity:", 50, 290);
         JSpinner spQty = createStyledSpinner(50, 315);
@@ -734,10 +739,18 @@ public class PurchaseManagerView extends JFrame {
         JLabel lblSup = createLabel("Supplier:", 50, 360);
         JComboBox<String> cbSup = styleComboBox(new JComboBox<>());
         cbSup.setBounds(50, 385, 300, 35);
+
+        if (!isEditMode) {
+            cbSup.addItem("Select Supplier");  // Placeholder only in create mode
+        }
         for (String sup : PurchaseOrderController.loadSupplierOptions()) {
             cbSup.addItem(sup);
         }
-        if (isEditMode) cbSup.setSelectedItem(supplier);
+        if (isEditMode) {
+            cbSup.setSelectedItem(supplier);
+        } else {
+            cbSup.setSelectedIndex(0); // Select placeholder initially in create mode
+        }
 
         JTextField tfSupDisplay = styleTextField(new JTextField());
         tfSupDisplay.setBounds(50, 245, 300, 35);
@@ -966,7 +979,7 @@ public class PurchaseManagerView extends JFrame {
 
         p.add(scrollPane);
 
-        // Assign to class field if you want to access this scrollPane later
+
         viewPurchaseOrderScrollPane = scrollPane;
 
         return p;
@@ -1027,6 +1040,4 @@ public class PurchaseManagerView extends JFrame {
             return "";
         }
     }
-
-
 }
