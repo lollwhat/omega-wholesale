@@ -1,16 +1,39 @@
 package view;
 
-import model.RoleName;
+import controller.*;
+import model.*;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
-public class SalesManagerView extends JFrame {
-    public SalesManagerView() {
-        RoleName roleName = RoleName.SalesManager;
-        setTitle(roleName.getRoleName("SM"));
-        setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setVisible(true);
+public class SalesManagerView extends DashboardView {
+    private final String[] quickOptions = {"Item Management", "Supplier Management", "Daily Sales Entry"};
+
+    public SalesManagerView(SalesManager salesManager , String [] menuItems, String[] quickOptions) {
+        super(salesManager, menuItems, quickOptions);
+    }
+
+    @Override
+    protected JPanel createContentPanel(String contentType) {
+        switch (contentType) {
+            case "Item Management":
+                ItemManagementView itemManagementPanel = new ItemManagementView();
+                return itemManagementPanel.createItemManagementPanel();
+            case "Supplier Management":
+                SupplierManagementView supplierManagementView = new SupplierManagementView();
+                return supplierManagementView.createSupplierManagementPanel();
+            case "Daily Sales Entry":
+                DailySalesEntryView dailySalesEntryView = new DailySalesEntryView();
+                return dailySalesEntryView.createDailySalesEntryPanel();
+            case "Create Purchase Requisition":
+                PurchaseRequisitionView purchaseRequisitionView = new PurchaseRequisitionView();
+                return purchaseRequisitionView.createPurchaseRequisitionManagementPanel();
+            case "List of Purchase Orders":
+                PurchaseOrderView purchaseOrdersView = new PurchaseOrderView();
+                return purchaseOrdersView.createPurchaseOrderPanel();
+            default:
+                return createDashboardContentPanel(quickOptions);
+        }
     }
 }

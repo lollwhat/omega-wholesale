@@ -1,7 +1,8 @@
-PO001,2023-10-05,Direct,Seeder Item D,12,Seeder Supplier C,Pending,purchase,Pending
-PO002, 2023-10-06, Direct, Monitor, 15, Computer Accessories Ltd., Approved, purchase, finance
-PO003, 2025-05-01, Direct, Seeder Item B, 1, Seeder Supplier B, Pending, purchase, Pending
-PO004, 2025-05-01, PR002 - Tablet (30), Seeder Item B, 1, Seeder Supplier C, Pending, purchase,
-PO005, 2025-05-04, PR003, Monitor, 15, Computer Accessories Ltd., Pending, purchase, Pending
-PO009,2025-05-25,PR002,Seeder Notes B,40,SUP001,approved,purchase,approved
-PO010,2025-05-25,Direct,Seeder Item C,3,Seeder Supplier B,Pending,purchase,Pending
+PO001,2023-10-05,PR002,Tablet,30,Tech Solutions Inc.,Pending,purchase,Pending
+PO002, 2023-10-06, Direct, Monitor, 15, Computer Accessories Ltd., Received, purchase, finance
+PO003, 2023-10-07, PR004, Laptop, 20, Tech Solutions Inc., Approved, purchase, finance
+PO004,2023-10-08,PR005,Smartphone,50,Mobile World Ltd.,Pending,purchase,finance
+PO005, 2023-10-09, Direct, Keyboard, 40, Computer Accessories Ltd., Approved, purchase, finance
+PO006, 2023-10-10, PR006, Mouse, 35, Tech Solutions Inc., Approved, purchase, finance
+PO007,2023-10-11,PR007,Webcam,25,Camera Experts Ltd.,Pending,purchase,finance
+PO008, 2023-10-12, Direct, Printer, 10, Office Supplies Inc., Approved, purchase, finance
