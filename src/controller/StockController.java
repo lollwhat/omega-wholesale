@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 public class StockController extends CRUDController<Stock> {
     private static final String STOCK_DETAILS_FILE = "data/stock_details.txt";
@@ -105,70 +106,99 @@ public class StockController extends CRUDController<Stock> {
     }
 
     // mark purchase orders as received
-    public boolean markPurchaseOrderAsReceived(String poId) throws IOException {
-        List<String> poLines = Files.readAllLines(Paths.get("data/po_details.txt"));
-        List<String> stockLines = Files.readAllLines(Paths.get("data/stock_details.txt"));
-        boolean poFound = false;
+    public boolean markPurchaseOrderAsReceived(String poId) {
+        try {
+            List<String> poLines = Files.readAllLines(Paths.get("data/purchase_order.txt"));
+            List<String> poItemLines = Files.readAllLines(Paths.get("data/purchase_order_item.txt"));
+            List<String> stockLines = Files.readAllLines(Paths.get("data/stock_details.txt"));
 
-        for (int i = 0; i < poLines.size(); i++) {
-            String[] poDetails = poLines.get(i).split(",");
-            for (int k = 0; k < poDetails.length; k++) {
-                poDetails[k] = poDetails[k].trim();
-            }
-            if (poDetails[0].equals(poId)) {
-                poFound = true;
+            boolean poFound = false;
 
-                if (!poDetails[6].equalsIgnoreCase("Approved")) {
-                    System.out.println("Purchase order ID " + poId + " is not Approved and cannot be received.");
-                    return false; // cannot mark PO as received if not approved
+            // validate the PO in purchase_order.txt
+            for (int i = 0; i < poLines.size(); i++) {
+                String[] poDetails = poLines.get(i).split(",");
+                for (int k = 0; k < poDetails.length; k++) {
+                    poDetails[k] = poDetails[k].trim();
                 }
+                if (poDetails[0].equals(poId)) {
+                    poFound = true;
 
-                poDetails[6] = "Received";
-                poLines.set(i, String.join(", ", poDetails));
-
-                String itemName = poDetails[3];
-                int quantityToAdd = Integer.parseInt(poDetails[4].trim());
-                boolean stockUpdated = false;
-
-                for (int j = 0; j < stockLines.size(); j++) {
-                    String[] stockDetails = stockLines.get(j).split(",");
-                    for (int k = 0; k < stockDetails.length; k++) {
-                        stockDetails[k] = stockDetails[k].trim();
+                    if (!"1".equals(poDetails[4].trim())) { // check if PO is not "Approved"
+                        System.out.println("Purchase order ID " + poId + " is not in 'Approved' state and cannot be received.");
+                        return false;
                     }
-                    if (stockDetails[1].equalsIgnoreCase(itemName)) {
-                        int currentStock = Integer.parseInt(stockDetails[2].trim());
-                        stockDetails[2] = String.valueOf(currentStock + quantityToAdd);
-                        stockLines.set(j, String.join(",", stockDetails)); // stock file no spaces after commas
-                        stockUpdated = true;
-                        break;
+
+                    // update status to "Received" (2)
+                    poDetails[4] = "2";
+                    poLines.set(i, String.join(",", poDetails));
+                    break;
+                }
+            }
+
+            if (!poFound) {
+                System.out.println("Purchase order ID " + poId + " not found.");
+                return false;
+            }
+
+            // update stock from purchase_order_item.txt
+            List<String> updatedStockLines = new ArrayList<>(stockLines);
+
+            for (String poItemLine : poItemLines) {
+                String[] poItemDetails = poItemLine.split(",");
+                for (int k = 0; k < poItemDetails.length; k++) {
+                    poItemDetails[k] = poItemDetails[k].trim();
+                }
+
+                if (poItemDetails[0].equals(poId)) {
+                    String itemName = poItemDetails[3];
+                    int quantityToAdd = Integer.parseInt(poItemDetails[4]);
+
+                    // update or add stock
+                    boolean itemStockUpdated = false;
+
+                    for (int j = 0; j < updatedStockLines.size(); j++) {
+                        String[] stockDetails = updatedStockLines.get(j).split(",");
+                        for (int k = 0; k < stockDetails.length; k++) {
+                            stockDetails[k] = stockDetails[k].trim();
+                        }
+
+                        if (stockDetails[1].equalsIgnoreCase(itemName)) {
+                            int currentStock = Integer.parseInt(stockDetails[2].trim());
+                            stockDetails[2] = String.valueOf(currentStock + quantityToAdd);
+                            updatedStockLines.set(j, String.join(",", stockDetails));
+                            itemStockUpdated = true;
+                            break;
+                        }
+                    }
+
+                    // if item not found in stock, add a new entry
+                    if (!itemStockUpdated) {
+                        String newStockEntry = String.format(
+                                "ST%03d,%s,%d,1,1000,In Stock,%s",
+                                updatedStockLines.size() + 1,
+                                itemName,
+                                quantityToAdd,
+                                new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+                        );
+                        updatedStockLines.add(newStockEntry);
                     }
                 }
-
-                if (!stockUpdated) {
-                    String newStockEntry = String.format(
-                            "ST%03d,%s,%d,1,1000,In Stock,%s",
-                            stockLines.size() + 1,
-                            itemName,
-                            quantityToAdd,
-                            new SimpleDateFormat("yyyy-MM-dd").format(new Date())
-                    );
-                    stockLines.add(newStockEntry);
-                }
-
-                break;
             }
+
+            // write back updated data to files
+            Files.write(Paths.get("data/purchase_order.txt"), poLines);
+            Files.write(Paths.get("data/stock_details.txt"), updatedStockLines);
+
+            System.out.println("Purchase order marked as received: " + poId);
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Error processing purchase order: " + e.getMessage());
+            return false;
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing numeric values: " + e.getMessage());
+            return false;
         }
-
-        if (!poFound) {
-            System.out.println("Purchase order ID " + poId + " not found.");
-            return false; // PO not found
-        }
-
-        Files.write(Paths.get("data/po_details.txt"), poLines);
-        Files.write(Paths.get("data/stock_details.txt"), stockLines);
-
-        System.out.println("Purchase order marked as received: " + poId);
-        return true;
     }
 
     public void deleteStock(String stockId) {

@@ -248,18 +248,14 @@ public class InventoryManagerView extends JFrame {
                 String poId = table.getValueAt(row, 0).toString();
                 int confirm = JOptionPane.showConfirmDialog(null, "Mark purchase order " + poId + " as received?", "Confirm Action", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
-                    try {
-                        boolean success = stockController.markPurchaseOrderAsReceived(poId);
-                        if (success) {
-                            table.setValueAt("Received", row, table.getColumn("Status").getModelIndex());
-                            fireEditingStopped();
+                    boolean success = stockController.markPurchaseOrderAsReceived(poId);
+                    if (success) {
+                        table.setValueAt("Received", row, table.getColumn("Status").getModelIndex());
+                        fireEditingStopped();
 
-                            refreshStockTable(stockTable, controller);
-                        } else {
-                            JOptionPane.showMessageDialog(null, "Failed to mark purchase order as received.", "Error", JOptionPane.ERROR_MESSAGE);
-                        }
-                    } catch (IOException e) {
-                        JOptionPane.showMessageDialog(null, "An error occurred while processing the request: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        refreshStockTable(stockTable, controller);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Failed to mark purchase order as received.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
@@ -540,8 +536,8 @@ public class InventoryManagerView extends JFrame {
             Object[][] stocks = controller.loadStocks();
             String[] stockColumns = controller.getStockTableColumns();
 
-            Object[][] approvedPurchaseOrders = controller.loadApprovedPurchaseOrders();
-            String[] approvedPurchaseOrderColumns = controller.getApprovedPurchaseOrderTableColumns();
+            Object[][] purchaseOrdersWithItems = controller.loadApprovedPurchaseOrdersWithItems();
+            String[] purchaseOrderWithItemsTableColumns = controller.getPurchaseOrderWithItemsTableColumns();
 
             DefaultTableModel stockTableModel = new DefaultTableModel(stocks, stockColumns);
             JTable stockTable = new JTable(stockTableModel);
@@ -571,7 +567,7 @@ public class InventoryManagerView extends JFrame {
                 }
             }
 
-            DefaultTableModel poTableModel = new DefaultTableModel(approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            DefaultTableModel poTableModel = new DefaultTableModel(purchaseOrdersWithItems, purchaseOrderWithItemsTableColumns);
             JTable purchaseOrderTable = new JTable(poTableModel);
 
             JPanel stockTablePanel;
@@ -608,10 +604,10 @@ public class InventoryManagerView extends JFrame {
             stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
 
             JPanel purchaseOrderTablePanel;
-            if (approvedPurchaseOrders == null || approvedPurchaseOrders.length == 0) {
+            if (purchaseOrdersWithItems == null || purchaseOrdersWithItems.length == 0) {
                 purchaseOrderTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
             } else {
-                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, approvedPurchaseOrders, approvedPurchaseOrderColumns);
+                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, purchaseOrdersWithItems, purchaseOrderWithItemsTableColumns);
             }
 
             JButton generateStockReportButton = new JButton("Generate Stock Report");
@@ -666,7 +662,6 @@ public class InventoryManagerView extends JFrame {
             quickAccessPanel.repaint();
         });
 
-        // TODO: view POs
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
             InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 
@@ -787,8 +782,8 @@ public class InventoryManagerView extends JFrame {
             Object[][] stocks = controller.loadStocks();
             String[] stockColumns = controller.getStockTableColumns();
 
-            Object[][] approvedPurchaseOrders = controller.loadApprovedPurchaseOrders();
-            String[] approvedPurchaseOrderColumns = controller.getApprovedPurchaseOrderTableColumns();
+            Object[][] purchaseOrdersWithItems = controller.loadApprovedPurchaseOrdersWithItems();
+            String[] purchaseOrderWithItemsTableColumns = controller.getPurchaseOrderWithItemsTableColumns();
 
             DefaultTableModel stockTableModel = new DefaultTableModel(stocks, stockColumns);
             JTable stockTable = new JTable(stockTableModel);
@@ -814,7 +809,7 @@ public class InventoryManagerView extends JFrame {
                 }
             }
 
-            DefaultTableModel poTableModel = new DefaultTableModel(approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            DefaultTableModel poTableModel = new DefaultTableModel(purchaseOrdersWithItems, purchaseOrderWithItemsTableColumns);
             JTable purchaseOrderTable = new JTable(poTableModel);
 
             JPanel stockTablePanel;
@@ -851,10 +846,10 @@ public class InventoryManagerView extends JFrame {
             stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
 
             JPanel purchaseOrderTablePanel;
-            if (approvedPurchaseOrders == null || approvedPurchaseOrders.length == 0) {
+            if (purchaseOrdersWithItems == null || purchaseOrdersWithItems.length == 0) {
                 purchaseOrderTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
             } else {
-                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, approvedPurchaseOrders, approvedPurchaseOrderColumns);
+                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, purchaseOrdersWithItems, purchaseOrderWithItemsTableColumns);
             }
 
             JButton generateStockReportButton = new JButton("Generate Stock Report");
