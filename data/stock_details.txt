@@ -1,8 +1,8 @@
-ST001,Laptop,170,1,1000,In Stock,2025-01-01
-ST002,Smartphone,220,1,1000,In Stock,2025-01-02
-ST003,Tablet,20,1,1000,Low Stock,2025-01-03
-ST004,Monitor,75,1,1000,In Stock,2025-01-04
-ST005,Keyboard,0,1,1000,Out of Stock,2025-01-05
-ST006,Mouse,25,1,1000,Low Stock,2025-01-06
+ST001,HP EliteBook G10 Laptop,171,1,1000,In Stock,2025-01-01
+ST002,Dell 27 inch 4K Monitor,223,1,1000,In Stock,2025-01-02
+ST003,Logitech MX Master 3S Mouse,26,1,1000,Low Stock,2025-01-03
+ST004,Samsung 1TB NVMe SSD,80,1,1000,In Stock,2025-01-04
+ST005,Mechanical Keyboard Keychron K2,1,1,1000,Low Stock,2025-01-05
+ST006,Logitech Wireless Mouse,25,1,1000,Low Stock,2025-01-06
 ST007,Webcam,40,1,1000,In Stock,2025-01-07
 ST008,Printer,50,1,1000,In Stock,2025-01-08
