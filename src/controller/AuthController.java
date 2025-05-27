@@ -83,7 +83,9 @@ public class AuthController extends CRUDController<User>{
                 };
                 quickOptions = new String[]{"Item Management", "Supplier Management", "Daily Sales Entry"};
                 new SalesManagerView((SalesManager) user, menuItems, quickOptions);
+                break;
             case "PM":
+                PurchaseManagerView PurchaseManager = new PurchaseManagerView(user);
                 break;
             case "IM":
                 InventoryManagerView InventoryManager = new InventoryManagerView(user);
