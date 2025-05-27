@@ -1,5 +1,5 @@
-PR001,Seeder Item ID A,Seeder Purchase Requisition A,Seeder Notes A,20,10,200,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,approved,2025-05-21 21:08:51,sales1,2025-05-21 21:08:51,sales1
-PR002,Seeder Item ID B,Seeder Purchase Requisition B,Seeder Notes B,40,5,200,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,approved,2025-05-21 21:08:51,sales1,2025-05-21 21:08:51,sales1
-PR003,Seeder Item ID C,Seeder Purchase Requisition C,Seeder Notes C,50,8,400,SUP002,Seeder Supplier Name B,Seeder Supplier Company Name B,Seeder Supplier Address B,pending,2025-05-21 21:08:51,sales1,2025-05-21 21:08:51,sales1
-PR004,Seeder Item ID D,Seeder Purchase Requisition D,Seeder Notes D,10,20,200,SUP003,Seeder Supplier Name C,Seeder Supplier Company Name C,Seeder Supplier Address C,rejected,2025-05-21 21:08:51,sales1,2025-05-21 21:08:51,sales1
-PR005,Seeder Item ID E,Seeder Purchase Requisition E,Seeder Notes E,30,3,60,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,approved,2025-05-21 21:08:51,sales1,2025-05-21 21:08:51,sales1
+PR001,Seeder Notes A,SUP001,1,2025-05-24 23:05:24,sales1,2025-05-24 23:05:24,sales1
+PR002,Seeder Notes B,SUP001,1,2025-05-24 23:05:24,sales1,2025-05-25 04:08:51,SM001
+PR003,Seeder Notes C,SUP002,0,2025-05-24 23:05:24,sales1,2025-05-24 23:05:24,sales1
+PR004,Seeder Notes D,SUP003,2,2025-05-24 23:05:24,sales1,2025-05-25 04:08:23,SM001
+PR005,Seeder Notes E,SUP001,1,2025-05-24 23:05:24,sales1,2025-05-24 23:05:24,sales1

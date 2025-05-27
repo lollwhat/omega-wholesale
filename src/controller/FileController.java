@@ -26,10 +26,10 @@ public class FileController {
     public static List<String> readFile(){
         try{
             fileLines = Files.readAllLines(Paths.get(filePath));
+            return fileLines;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return null;
     }
 
     public static List<String> getFile(){
@@ -222,4 +222,5 @@ public class FileController {
 
         return lastIdByRole;
     }
+
 }

@@ -3,16 +3,18 @@ package view;
 import controller.AuthController;
 import controller.InventoryManagerController;
 import controller.ItemController;
+import controller.StockController;
 import model.RoleName;
 import model.User;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Date;
 
 public class InventoryManagerView extends JFrame {
@@ -117,6 +119,223 @@ public class InventoryManagerView extends JFrame {
 
             return tablePanel;
         }
+
+        public static JPanel createTableWithButton(JTable stockTable, JTable purchaseOrderTable, Object[][] data, String[] columnNames) {
+            DefaultTableModel tableModel = new DefaultTableModel(data, columnNames) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return column == getColumnCount() - 1;
+                }
+            };
+
+            JTable table = new JTable(tableModel);
+            styleTable(table);
+
+            try {
+                TableColumn actionColumn = table.getColumn("Action");
+                actionColumn.setCellRenderer(new ButtonRenderer());
+                actionColumn.setCellEditor(new ButtonEditor(table, new StockController(), stockTable,
+                        new InventoryManagerController(new ItemController(), new StockController())));
+            } catch (IllegalArgumentException ex) {
+                System.err.println("Error: 'Action' column not found. Ensure columnNames include 'Action'.");
+            }
+
+            JScrollPane scrollPane = new JScrollPane(table);
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+            scrollPane.getViewport().setBackground(new Color(30, 41, 59));
+
+            JPanel tablePanel = new JPanel(new BorderLayout());
+            tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+            return tablePanel;
+        }
+
+        private static void styleTable(JTable table) {
+            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+            centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+            for (int i = 0; i < table.getColumnCount(); i++) {
+                table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+            }
+
+            table.setForeground(Color.WHITE);
+            table.setBackground(new Color(30, 41, 59));
+            table.setFont(new Font("SansSerif", Font.PLAIN, 10));
+            table.setRowHeight(30);
+            table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            table.setSelectionBackground(new Color(165, 180, 252));
+            table.setShowGrid(false);
+
+            JTableHeader header = table.getTableHeader();
+            header.setFont(new Font("SansSerif", Font.BOLD, 12));
+            header.setBackground(new Color(165, 180, 252));
+            header.setForeground(Color.WHITE);
+            header.setPreferredSize(new Dimension(header.getPreferredSize().width, 35));
+        }
+
+
+        static class ButtonRenderer extends JPanel implements TableCellRenderer {
+            private final JButton receiveButton = new JButton("Receive");
+            private final JButton removeButton = new JButton("Remove");
+
+            public ButtonRenderer() {
+                setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+                setOpaque(true);
+
+                receiveButton.setOpaque(true);
+                receiveButton.setBorderPainted(false);
+                receiveButton.setFocusPainted(false);
+                receiveButton.setBackground(new Color(59, 130, 246));
+                receiveButton.setForeground(Color.WHITE);
+
+                removeButton.setOpaque(true);
+                removeButton.setBorderPainted(false);
+                removeButton.setFocusPainted(false);
+                removeButton.setBackground(new Color(220, 38, 38));
+                removeButton.setForeground(Color.WHITE);
+
+                add(receiveButton);
+                add(removeButton);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                String status = table.getValueAt(row, table.getColumn("Status").getModelIndex()).toString();
+
+                receiveButton.setVisible(!"Received".equalsIgnoreCase(status));
+                removeButton.setVisible("Received".equalsIgnoreCase(status));
+
+                setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+                return this;
+            }
+        }
+
+        static class ButtonEditor extends AbstractCellEditor implements TableCellEditor {
+            private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            private final JButton receiveButton = new JButton("Receive");
+            private final JButton removeButton = new JButton("Remove");
+            private JTable table;
+            private int row;
+
+            private final StockController stockController;
+            private final JTable stockTable;
+            private final InventoryManagerController controller;
+
+            public ButtonEditor(JTable table, StockController stockController, JTable stockTable, InventoryManagerController controller) {
+                this.table = table;
+                this.stockController = stockController;
+                this.stockTable = stockTable;
+                this.controller = controller;
+
+                receiveButton.setOpaque(true);
+                receiveButton.setBorderPainted(false);
+                receiveButton.setFocusPainted(false);
+                receiveButton.setBackground(new Color(59, 130, 246));
+                receiveButton.setForeground(Color.WHITE);
+                receiveButton.addActionListener(e -> handleReceiveAction());
+
+                removeButton.setOpaque(true);
+                removeButton.setBorderPainted(false);
+                removeButton.setFocusPainted(false);
+                removeButton.setBackground(new Color(220, 38, 38));
+                removeButton.setForeground(Color.WHITE);
+                removeButton.addActionListener(e -> handleRemoveAction());
+
+                panel.add(receiveButton);
+                panel.add(removeButton);
+            }
+
+            private void handleReceiveAction() {
+                String poId = table.getValueAt(row, 0).toString();
+                int confirm = JOptionPane.showConfirmDialog(null, "Mark purchase order " + poId + " as received?", "Confirm Action", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    try {
+                        boolean success = stockController.markPurchaseOrderAsReceived(poId);
+                        if (success) {
+                            table.setValueAt("Received", row, table.getColumn("Status").getModelIndex());
+                            fireEditingStopped();
+
+                            refreshStockTable(stockTable, controller);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Failed to mark purchase order as received.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (IOException e) {
+                        JOptionPane.showMessageDialog(null, "An error occurred while processing the request: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+
+            private void handleRemoveAction() {
+                try {
+                    String poId = table.getValueAt(row, 0).toString();
+                    int confirm = JOptionPane.showConfirmDialog(null, "Remove purchase order " + poId + " from the list?", "Confirm Action", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        DefaultTableModel model = (DefaultTableModel) table.getModel();
+                        model.removeRow(row);
+                        fireEditingStopped();
+                    }
+                } catch (ArrayIndexOutOfBoundsException ex) {
+                    System.err.println("Array index out of bounds: " + ex.getMessage());
+                } catch (Exception ex) {
+                    System.err.println("An error occurred: " + ex.getMessage());
+                }
+            }
+
+            private void refreshStockTable(JTable stockTable, InventoryManagerController controller) {
+                SwingUtilities.invokeLater(() -> {
+                    // load stock data
+                    Object[][] updatedStockData = controller.loadStocks();
+
+                    DefaultTableModel model = (DefaultTableModel) stockTable.getModel();
+                    model.setRowCount(0);
+
+                    if (updatedStockData != null) {
+                        for (Object[] row : updatedStockData) {
+                            model.addRow(row);
+                        }
+                    }
+
+                    model.fireTableDataChanged();
+                    stockTable.repaint();
+                });
+            }
+
+            @Override
+            public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+                this.row = row;
+                String status = table.getValueAt(row, table.getColumn("Status").getModelIndex()).toString();
+
+                receiveButton.setVisible(!"Received".equalsIgnoreCase(status));
+                removeButton.setVisible("Received".equalsIgnoreCase(status));
+                return panel;
+            }
+
+            @Override
+            public Object getCellEditorValue() {
+                return null;
+            }
+        }
+
+        public static class StockTableRowRenderer extends DefaultTableCellRenderer {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
+                Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                String status = table.getValueAt(row, table.getColumn("Status").getModelIndex()).toString();
+                if ("Out of Stock".equals(status)) {
+                    cell.setBackground(Color.RED);
+                    cell.setForeground(Color.WHITE);
+                } else if ("Low Stock".equals(status)) {
+                    cell.setBackground(Color.ORANGE);
+                    cell.setForeground(Color.BLACK);
+                } else {
+                    cell.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+                    cell.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+                }
+
+                return cell;
+            }
+        }
     }
 
     // helper method for display "no data available" message
@@ -209,6 +428,44 @@ public class InventoryManagerView extends JFrame {
         quickAccessPanel.repaint();
     }
 
+    // helper method for stock
+    public class StockHelper {
+        private final StockController stockController;
+
+        public StockHelper(StockController stockController) {
+            this.stockController = stockController;
+        }
+
+        public int[] calculateStockCounts() {
+            List<String> stockData = stockController.getAllStocks();
+            int inStockCount = 0;
+            int lowStockCount = 0;
+            int outOfStockCount = 0;
+
+            if (stockData != null) {
+                for (String stock : stockData) {
+                    if (stock == null || stock.trim().isEmpty()) continue;
+
+                    String[] details = stock.split(",");
+                    if (details.length > 5) {
+                        String status = details[5].trim();
+                        if ("In Stock".equalsIgnoreCase(status)) {
+                            inStockCount++;
+                        } else if ("Low Stock".equalsIgnoreCase(status)) {
+                            lowStockCount++;
+                        } else if ("Out of Stock".equalsIgnoreCase(status)) {
+                            outOfStockCount++;
+                        }
+                    } else {
+                        System.err.println("Malformed stock data: " + Arrays.toString(details));
+                    }
+                }
+            }
+
+            return new int[]{inStockCount, lowStockCount, outOfStockCount};
+        }
+    }
+
     // sidebar
     private JPanel createSideBar() {
         JPanel sideBar = new JPanel();
@@ -238,9 +495,7 @@ public class InventoryManagerView extends JFrame {
         buttonWrapper.setOpaque(false);
 
         JButton viewItemsButton = createButton("View Items", e -> {
-            InventoryManagerController controller = new InventoryManagerController(
-              new ItemController()
-            );
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 
 //            Object[][] items = controller.loadItems();
 //            if (items == null || items.length == 0) {
@@ -277,13 +532,143 @@ public class InventoryManagerView extends JFrame {
             handleViewButton("No items available at the moment.", items, columns);
         });
 
-        // TODO: inventory management
         JButton inventoryManagementButton = createButton("Inventory Management", e -> {
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
+            StockController stockController = controller.getStockController();
+            StockHelper stockHelper = new StockHelper(stockController);
+
+            Object[][] stocks = controller.loadStocks();
+            String[] stockColumns = controller.getStockTableColumns();
+
+            Object[][] approvedPurchaseOrders = controller.loadApprovedPurchaseOrders();
+            String[] approvedPurchaseOrderColumns = controller.getApprovedPurchaseOrderTableColumns();
+
+            DefaultTableModel stockTableModel = new DefaultTableModel(stocks, stockColumns);
+            JTable stockTable = new JTable(stockTableModel);
+            TableHelper.styleTable(stockTable);
+
+            if (stocks != null && stocks.length > 0) {
+                int statusColumnIndex = 5;
+
+                // sort the data to prioritize critical statuses
+//                Arrays.sort(stocks, (row1, row2) -> {
+//                    String status1 = row1[statusColumnIndex].toString().trim();
+//                    String status2 = row2[statusColumnIndex].toString().trim();
+//
+//                    int priority1 = "Out of Stock".equalsIgnoreCase(status1) ? 1
+//                            : "Low Stock".equalsIgnoreCase(status1) ? 2
+//                            : 3;
+//                    int priority2 = "Out of Stock".equalsIgnoreCase(status2) ? 1
+//                            : "Low Stock".equalsIgnoreCase(status2) ? 2
+//                            : 3;
+//
+//                    return Integer.compare(priority1, priority2);
+//                });
+
+                stockTable.getColumnModel().getColumn(statusColumnIndex).setCellRenderer(new TableHelper.StockTableRowRenderer());
+                for (int i = 0; i < stockTable.getColumnCount(); i++) {
+                    stockTable.getColumnModel().getColumn(i).setCellRenderer(new TableHelper.StockTableRowRenderer());
+                }
+            }
+
+            DefaultTableModel poTableModel = new DefaultTableModel(approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            JTable purchaseOrderTable = new JTable(poTableModel);
+
+            JPanel stockTablePanel;
+            if (stocks == null || stocks.length == 0) {
+                stockTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No stock data available.");
+            } else {
+                JScrollPane stockTableScrollPane = new JScrollPane(stockTable);
+                stockTablePanel = new JPanel(new BorderLayout());
+                stockTablePanel.add(stockTableScrollPane, BorderLayout.CENTER);
+            }
+
+            JPanel stockTableWrapper = new JPanel(new BorderLayout());
+            stockTableWrapper.setBackground(quickAccessPanel.getBackground());
+
+            int[] stockCounts = stockHelper.calculateStockCounts();
+            JLabel inStockLabel = new JLabel("In Stock: " + stockCounts[0]);
+            JLabel lowStockLabel = new JLabel("Low Stock: " + stockCounts[1]);
+            JLabel outOfStockLabel = new JLabel("Out of Stock: " + stockCounts[2]);
+
+            inStockLabel.setForeground(Color.GREEN);
+            inStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            lowStockLabel.setForeground(Color.ORANGE);
+            lowStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            outOfStockLabel.setForeground(Color.RED);
+            outOfStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+
+            JPanel alertPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            alertPanel.setBackground(quickAccessPanel.getBackground());
+            alertPanel.add(inStockLabel);
+            alertPanel.add(lowStockLabel);
+            alertPanel.add(outOfStockLabel);
+
+            stockTableWrapper.add(alertPanel, BorderLayout.NORTH);
+            stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
+
+            JPanel purchaseOrderTablePanel;
+            if (approvedPurchaseOrders == null || approvedPurchaseOrders.length == 0) {
+                purchaseOrderTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
+            } else {
+                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            }
+
+            JButton generateStockReportButton = new JButton("Generate Stock Report");
+            generateStockReportButton.setOpaque(true);
+            generateStockReportButton.setBackground(new Color(78, 91, 249));
+            generateStockReportButton.setForeground(Color.WHITE);
+            generateStockReportButton.setFocusPainted(false);
+            generateStockReportButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+            generateStockReportButton.addActionListener(event -> {
+                String savePath = System.getProperty("user.home") + "/Downloads/Stock_Report.csv";
+
+                try {
+                    stockController.generateStockReport(savePath);
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Report saved to: " + savePath,
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Error generating report: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            });
+
+            quickAccessPanel.removeAll();
+            quickAccessPanel.setLayout(new BorderLayout(10, 10));
+
+            JPanel tablesPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+            tablesPanel.setBackground(quickAccessPanel.getBackground());
+
+//            JPanel stockTableWrapper = new JPanel(new BorderLayout());
+            stockTableWrapper.setBackground(quickAccessPanel.getBackground());
+            stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
+
+            JPanel purchaseOrderWrapper = new JPanel(new BorderLayout());
+            purchaseOrderWrapper.setBackground(quickAccessPanel.getBackground());
+            purchaseOrderWrapper.add(purchaseOrderTablePanel, BorderLayout.CENTER);
+
+            tablesPanel.add(stockTableWrapper);
+            tablesPanel.add(purchaseOrderWrapper);
+
+            quickAccessPanel.add(tablesPanel, BorderLayout.CENTER);
+            quickAccessPanel.add(generateStockReportButton, BorderLayout.SOUTH);
+
+            quickAccessPanel.revalidate();
+            quickAccessPanel.repaint();
         });
 
         // TODO: view POs
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
-            InventoryManagerController controller = new InventoryManagerController(new ItemController());
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 
             Object[][] purchaseOrders = controller.loadPurchaseOrders();
             String[] columns = controller.getPurchaseOrderTableColumns();
@@ -385,7 +770,7 @@ public class InventoryManagerView extends JFrame {
         buttonWrapper.setLayout(new GridLayout(3, 1, 10, 10));
 
         JButton viewItemsButton = createButton("View Items", e -> {
-            InventoryManagerController controller = new InventoryManagerController(new ItemController());
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 
             Object[][] items = controller.loadItems();
             String[] columns = controller.getItemTableColumns();
@@ -395,12 +780,138 @@ public class InventoryManagerView extends JFrame {
         viewItemsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton inventoryManagementButton = createButton("Inventory Management", e -> {
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
+            StockController stockController = controller.getStockController();
+            StockHelper stockHelper = new StockHelper(stockController);
 
+            Object[][] stocks = controller.loadStocks();
+            String[] stockColumns = controller.getStockTableColumns();
+
+            Object[][] approvedPurchaseOrders = controller.loadApprovedPurchaseOrders();
+            String[] approvedPurchaseOrderColumns = controller.getApprovedPurchaseOrderTableColumns();
+
+            DefaultTableModel stockTableModel = new DefaultTableModel(stocks, stockColumns);
+            JTable stockTable = new JTable(stockTableModel);
+            TableHelper.styleTable(stockTable);
+
+            if (stocks != null && stocks.length > 0) {
+                int statusColumnIndex = 5;
+
+                // sort the data to prioritize critical statuses
+//                Arrays.sort(stocks, (row1, row2) -> {
+//                    String status1 = row1[statusColumnIndex].toString();
+//                    String status2 = row2[statusColumnIndex].toString();
+//
+//                    int priority1 = "Out of Stock".equals(status1) ? 1 : "Low Stock".equals(status1) ? 2 : 3;
+//                    int priority2 = "Out of Stock".equals(status2) ? 1 : "Low Stock".equals(status2) ? 2 : 3;
+//
+//                    return Integer.compare(priority1, priority2);
+//                });
+
+                stockTable.getColumnModel().getColumn(statusColumnIndex).setCellRenderer(new TableHelper.StockTableRowRenderer());
+                for (int i = 0; i < stockTable.getColumnCount(); i++) {
+                    stockTable.getColumnModel().getColumn(i).setCellRenderer(new TableHelper.StockTableRowRenderer());
+                }
+            }
+
+            DefaultTableModel poTableModel = new DefaultTableModel(approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            JTable purchaseOrderTable = new JTable(poTableModel);
+
+            JPanel stockTablePanel;
+            if (stocks == null || stocks.length == 0) {
+                stockTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No stock data available.");
+            } else {
+                JScrollPane stockTableScrollPane = new JScrollPane(stockTable);
+                stockTablePanel = new JPanel(new BorderLayout());
+                stockTablePanel.add(stockTableScrollPane, BorderLayout.CENTER);
+            }
+
+            JPanel stockTableWrapper = new JPanel(new BorderLayout());
+            stockTableWrapper.setBackground(quickAccessPanel.getBackground());
+
+            int[] stockCounts = stockHelper.calculateStockCounts();
+            JLabel inStockLabel = new JLabel("In Stock: " + stockCounts[0]);
+            JLabel lowStockLabel = new JLabel("Low Stock: " + stockCounts[1]);
+            JLabel outOfStockLabel = new JLabel("Out of Stock: " + stockCounts[2]);
+
+            inStockLabel.setForeground(Color.GREEN);
+            inStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            lowStockLabel.setForeground(Color.ORANGE);
+            lowStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            outOfStockLabel.setForeground(Color.RED);
+            outOfStockLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+
+            JPanel alertPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            alertPanel.setBackground(quickAccessPanel.getBackground());
+            alertPanel.add(inStockLabel);
+            alertPanel.add(lowStockLabel);
+            alertPanel.add(outOfStockLabel);
+
+            stockTableWrapper.add(alertPanel, BorderLayout.NORTH);
+            stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
+
+            JPanel purchaseOrderTablePanel;
+            if (approvedPurchaseOrders == null || approvedPurchaseOrders.length == 0) {
+                purchaseOrderTablePanel = UIHelper.createDisplayNoDataAvailableMessage("No purchase orders available.");
+            } else {
+                purchaseOrderTablePanel = TableHelper.createTableWithButton(stockTable, purchaseOrderTable, approvedPurchaseOrders, approvedPurchaseOrderColumns);
+            }
+
+            JButton generateStockReportButton = new JButton("Generate Stock Report");
+            generateStockReportButton.setOpaque(true);
+            generateStockReportButton.setBackground(new Color(78, 91, 249));
+            generateStockReportButton.setForeground(Color.WHITE);
+            generateStockReportButton.setFocusPainted(false);
+            generateStockReportButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+            generateStockReportButton.addActionListener(event -> {
+                String savePath = System.getProperty("user.home") + "/Downloads/Stock_Report.csv";
+
+                try {
+                    stockController.generateStockReport(savePath);
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Report saved to: " + savePath,
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Error generating report: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            });
+
+            quickAccessPanel.removeAll();
+            quickAccessPanel.setLayout(new BorderLayout(10, 10));
+
+            JPanel tablesPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+            tablesPanel.setBackground(quickAccessPanel.getBackground());
+
+//            JPanel stockTableWrapper = new JPanel(new BorderLayout());
+            stockTableWrapper.setBackground(quickAccessPanel.getBackground());
+            stockTableWrapper.add(stockTablePanel, BorderLayout.CENTER);
+
+            JPanel purchaseOrderWrapper = new JPanel(new BorderLayout());
+            purchaseOrderWrapper.setBackground(quickAccessPanel.getBackground());
+            purchaseOrderWrapper.add(purchaseOrderTablePanel, BorderLayout.CENTER);
+
+            tablesPanel.add(stockTableWrapper);
+            tablesPanel.add(purchaseOrderWrapper);
+
+            quickAccessPanel.add(tablesPanel, BorderLayout.CENTER);
+            quickAccessPanel.add(generateStockReportButton, BorderLayout.SOUTH);
+
+            quickAccessPanel.revalidate();
+            quickAccessPanel.repaint();
         });
         inventoryManagementButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton viewPurchaseOrdersButton = createButton("View Purchase Orders", e -> {
-            InventoryManagerController controller = new InventoryManagerController(new ItemController());
+            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 
             Object[][] purchaseOrders = controller.loadPurchaseOrders();
             String[] columns = controller.getPurchaseOrderTableColumns();
@@ -428,21 +939,23 @@ public class InventoryManagerView extends JFrame {
         return quickAccessPanel;
     }
 
-//    // testing the View
-//    public static void main(String[] args) {
-//        String userID = "WW01";
-//        String username = "inventorytest";
-//        String password = "inventory123";
-//        String firstName = "John";
-//        String lastName = "Doe";
-//        String currentTimeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-//
-//        User testView = new User(userID, username, password, firstName, lastName, currentTimeStamp, currentTimeStamp) {
-//            @Override
-//            public String getUsername() {
-//                return "testView";
-//            }
-//        };
-//        new InventoryManagerView(testView);
-//    }
+    // testing the View
+    public static void main(String[] args) {
+        String userID = "WW01";
+        String username = "inventorytest";
+        String password = "inventory123";
+        String firstName = "John";
+        String lastName = "Doe";
+        String email = "johndoe@email.com";
+        String status = "Active";
+        String currentTimeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+        User testView = new User(userID, username, password, firstName, lastName, email, status, currentTimeStamp, currentTimeStamp) {
+            @Override
+            public String getUsername() {
+                return "testView";
+            }
+        };
+        new InventoryManagerView(testView);
+    }
 }

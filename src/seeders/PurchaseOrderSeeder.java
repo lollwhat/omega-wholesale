@@ -2,28 +2,42 @@ package seeders;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
 public class PurchaseOrderSeeder {
-    final String PRDetailsFile = "data/purchase_order.txt";
+    final String PO_HEADER_FILE = "data/purchase_order.txt";
 
     public PurchaseOrderSeeder() {
         // Default constructor
     }
 
     public void seeding() {
-        String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String currentTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(PRDetailsFile, false));
-            writer.write("PO001,PR001,Seeder Item ID A,Seeder Item Name A,Seeder Notes A,20,10,200,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,cancelled"+createdAt+",sales1,"+createdAt+",sales1,cancelled,cancelled\n");
-            writer.write("PO002,PR002,Seeder Item ID B,Seeder Item Name B,Seeder Notes B,40,5,200,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,received"+createdAt+",sales1,"+createdAt+",sales1,"+createdAt+",sales1\n");
-            writer.write("PO005,PR005,Seeder Item ID E,Seeder Item Name E,Seeder Notes E,30,3,60,SUP001,Seeder Supplier Name A,Seeder Supplier Company Name A,Seeder Supplier Address A,processing"+createdAt+",sales1,"+createdAt+",sales1,pending,pending\n");
-            System.out.println("Successfully seeded data to purchase_order.txt");
+            Files.createDirectories(Paths.get("data"));
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter(PO_HEADER_FILE, false));
+
+            writer.write("PO001,PR001,Cancelled due to budget constraints,SUP001,2,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+            writer.write("PO002,PR002,Urgent delivery received,SUP001,1,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+            writer.write("PO003,PR003,Standard order,SUP002,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+            writer.write("PO004,PR005,Items for project Alpha,SUP001,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+            writer.write("PO005,PR004,Items for project Beta,SUP002,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+
+
+            System.out.println("Successfully seeded data to " + PO_HEADER_FILE);
             writer.close();
         } catch (Exception e) {
-            System.out.println("Error seeding data: " + e.getMessage());
+            System.err.println("Error seeding data to " + PO_HEADER_FILE + ": " + e.getMessage());
         }
+    }
+
+    public static void main(String[] args) {
+        PurchaseOrderSeeder seeder = new PurchaseOrderSeeder();
+        seeder.seeding();
     }
 }

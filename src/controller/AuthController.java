@@ -41,6 +41,7 @@ public class AuthController extends CRUDController<User>{
     public User login(String username, String password){
         List<String> userData = FileController.getFile();
         for (String line : userData) {
+            System.out.println(line);
             String[] details = line.split(",");
             if (details[1].trim().equals(username) && details[2].trim().equals(password)) {
                 String userId = details[0].trim();
@@ -73,7 +74,15 @@ public class AuthController extends CRUDController<User>{
                 new AdminView((Admin) user, menuItems, quickOptions);
                 break;
             case "SM":
-                SalesManagerView SalesManager = new SalesManagerView();
+                menuItems = new String[]{
+                        "Item Management",
+                        "Supplier Management",
+                        "Daily Sales Entry",
+                        "Create Purchase Requisition",
+                        "List of Purchase Orders"
+                };
+                quickOptions = new String[]{"Item Management", "Supplier Management", "Daily Sales Entry"};
+                new SalesManagerView((SalesManager) user, menuItems, quickOptions);
             case "PM":
                 break;
             case "IM":
@@ -98,11 +107,10 @@ public class AuthController extends CRUDController<User>{
         }
     }
 
-    public void createUser(String role, String username, String password, String firstName, String lastName, String email){
+    public void createUser(String role, String username, String password, String firstName, String lastName, String email, Boolean isActive){
         try{
-            String status = "active";
+            String status = isActive ? "active" : "inactive";
             String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            String updatedAt = createdAt;
 
             Map<String, String> newId = FileController.getLastUserIdByRole();
 
@@ -113,7 +121,7 @@ public class AuthController extends CRUDController<User>{
                 userId = String.format("%s%03d", role, numericPart + 1);
             }
 
-            User user = userInstance(role, userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+            User user = userInstance(role, userId, username, password, firstName, lastName, email, status, createdAt, createdAt);
 
             add(user);
         }catch(IOException e){
@@ -125,6 +133,7 @@ public class AuthController extends CRUDController<User>{
     public void update(User user){
         try{
             String data = user.toCSV();
+            System.out.println(data);
             fileController.updateFile(data);
             System.out.println("User added successfully");
         } catch (Exception e) {
@@ -132,14 +141,14 @@ public class AuthController extends CRUDController<User>{
         }
     }
 
-    public void updateUser(String userID, String username, String password, String firstName, String lastName, String email) throws IOException {
+    public void updateUser(String userID, String username, String password, String firstName, String lastName, String email, String status) throws IOException {
         String[] userData = fileController.getLine(0, userID);
         if (userData == null) {
             System.out.println("User not found");
             return;
         }
 
-        User user = userInstance(userData[0].substring(0,2), userData[1], username, password, firstName, lastName, email, userData[6], userData[7], new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        update(userInstance(userData[0].substring(0,2), userData[0], username, password, firstName, lastName, email, status, userData[7], new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
     }
 
     public void deleteUser(String userID){
