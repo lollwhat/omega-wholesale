@@ -1,6 +1,7 @@
 package controller;
 
 import java.io.*;
+import java.util.List;
 
 import model.FinanceManager;
 import view.FinanceManagerView;
@@ -16,6 +17,9 @@ public class FMController{
     public FMController (FinanceManager model, FinanceManagerView view){
         this.model = model;
         this.view = view;
+
+        FileController requisitionFile = new FileController("data/requisition_details.txt");
+        List<String> requisitionData = FileController.getFile();
     }
 
     public String getPO() {
