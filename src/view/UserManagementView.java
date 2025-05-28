@@ -44,7 +44,6 @@ public class UserManagementView {
         addUserButton.setFocusPainted(false);
         addUserButton.setBorderPainted(false);
         addUserButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        addUserButton.addActionListener(e -> JOptionPane.showMessageDialog(this.createUserManagementPanel(), "Add New User clicked"));
 
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         titlePanel.setBackground(mediumBlue);
