@@ -25,7 +25,7 @@ public class PurchaseOrder {
         this.prId = prId;
         this.notes = notes;
         this.supplierId = supplierId;
-        this.status = status;
+        this.status = status; // 0: Pending, 1: Approved, 2: Received, 3: Cancelled
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.updatedAt = updatedAt;
