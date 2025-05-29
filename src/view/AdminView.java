@@ -11,9 +11,6 @@ import java.time.format.DateTimeFormatter;
 
 public class AdminView extends DashboardView {
 
-    private final String[] menuItems = {"User Management", "Item Management", "Supplier Management", "Daily Sales Entry", "Create Purchase Requisition", "View Requisitions", "Create Purchase Order", "View Purchase Orders"};
-    private final String[] quickOptions = {"User Management", "Item Management", "Supplier Management"};
-
     public AdminView(Admin admin , String [] menuItems, String[] quickOptions) {
         super(admin, menuItems, quickOptions);
     }
@@ -22,6 +19,8 @@ public class AdminView extends DashboardView {
     @Override
     protected JPanel createContentPanel(String contentType) {
         switch (contentType){
+            case "Dashboard":
+                return createDashboardContentPanel(new String[]{"User Management", "Item Management", "Supplier Management"});
             case "User Management":
                 UserManagementView userManagementPanel = new UserManagementView();
                 return userManagementPanel.createUserManagementPanel();
