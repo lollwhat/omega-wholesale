@@ -31,7 +31,7 @@ public class StockController extends CRUDController<Stock> {
         }
     }
 
-    public void addStock(String name, int currentStock, int minStock, int maxStock, String status, String lastUpdateDate) {
+    public void addStock(String itemCode, String name, int currentStock, int minStock, int maxStock, String status, String lastUpdateDate) {
         if (currentStock < minStock || currentStock > maxStock) {
             System.err.println("Error: Current stock must be between minStock and maxStock.");
             return;
@@ -44,6 +44,7 @@ public class StockController extends CRUDController<Stock> {
 
             Stock stock = new Stock(
                     "ST" + String.format("%03d", tempStockId),
+                    itemCode,
                     name,
                     currentStock,
                     minStock,
@@ -80,11 +81,12 @@ public class StockController extends CRUDController<Stock> {
             Stock stock = new Stock(
                     stockId,
                     existingStockDetails[1],
-                    Integer.parseInt(existingStockDetails[2]),
+                    existingStockDetails[2],
                     Integer.parseInt(existingStockDetails[3]),
                     Integer.parseInt(existingStockDetails[4]),
-                    existingStockDetails[5],
-                    existingStockDetails[6]
+                    Integer.parseInt(existingStockDetails[5]),
+                    existingStockDetails[6],
+                    existingStockDetails[7]
             );
 
             if (currentStock != null && (currentStock < minStock || currentStock > maxStock)) {
@@ -92,11 +94,12 @@ public class StockController extends CRUDController<Stock> {
                 return;
             }
 
-            stock.setName((name != null) ? name : existingStockDetails[1]);
-            stock.setCurrentStock((currentStock != null) ? currentStock : Integer.parseInt(existingStockDetails[2]));
-            stock.setMinStock((minStock != null) ? minStock : Integer.parseInt(existingStockDetails[3]));
-            stock.setMaxStock((maxStock != null) ? maxStock : Integer.parseInt(existingStockDetails[4]));
-            stock.setStatus((status != null) ? status : existingStockDetails[5]);
+            stock.setItemCode(existingStockDetails[1]);
+            stock.setName((name != null) ? name : existingStockDetails[2]);
+            stock.setCurrentStock((currentStock != null) ? currentStock : Integer.parseInt(existingStockDetails[3]));
+            stock.setMinStock((minStock != null) ? minStock : Integer.parseInt(existingStockDetails[4]));
+            stock.setMaxStock((maxStock != null) ? maxStock : Integer.parseInt(existingStockDetails[5]));
+            stock.setStatus((status != null) ? status : existingStockDetails[6]);
             stock.setLastUpdateDate(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
 
             update(stock);
@@ -243,7 +246,7 @@ public class StockController extends CRUDController<Stock> {
 
         // read the stock data
         StringBuilder reportContent = new StringBuilder();
-        reportContent.append("Stock ID,Name,Current Stock,Min Stock,Max Stock,Status,Date\n");
+        reportContent.append("Stock ID,Item Code, Item Name,Current Stock,Min Stock,Max Stock,Status,Date\n");
         for (String line : Files.readAllLines(stockFilePath)) {
             reportContent.append(line).append("\n");
         }

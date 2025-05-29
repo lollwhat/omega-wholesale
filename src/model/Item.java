@@ -8,19 +8,17 @@ public class Item {
     private String itemName;
     private String unit;
     private String unitPrice;
-    private String supplierId;
     private String createdAt;
     private String updatedAt;
     private String createdBy;
     private String updatedBy;
 
-    public Item(String itemEntryId, String itemCode, String itemName, String unit, String unitPrice, String supplierId, String createdAt, String updatedAt, String createdBy, String updatedBy) {
+    public Item(String itemEntryId, String itemCode, String itemName, String unit, String unitPrice, String createdAt, String updatedAt, String createdBy, String updatedBy) {
         this.itemEntryId = itemEntryId;
         this.itemCode = itemCode;
         this.itemName = itemName;
         this.unit = unit;
         this.unitPrice = unitPrice;
-        this.supplierId = supplierId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.createdBy = createdBy;
@@ -48,14 +46,6 @@ public class Item {
         this.itemName = itemName;
     }
 
-
-    public String getSupplierId() {
-        return supplierId;
-    }
-    public void setSupplierId(String supplierId) {
-        this.supplierId = supplierId;
-    }
-
     public String getUnit() {
         return unit;
     }
@@ -77,7 +67,7 @@ public class Item {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String toCSV() {
-        return String.join(",", itemEntryId, itemCode, itemName, unit, unitPrice, supplierId, createdAt, updatedAt, createdBy, updatedBy);
+        return String.join(",", itemEntryId, itemCode, itemName, unit, unitPrice, createdAt, updatedAt, createdBy, updatedBy);
     }
 
     public String toJSON() {
@@ -87,7 +77,6 @@ public class Item {
                 "\"itemName\": \"" + itemName + "\"," +
                 "\"unit\": \"" + unit + "\"," +
                 "\"unitPrice\": \"" + unitPrice + "\"," +
-                "\"supplierId\": \"" + supplierId + "\"," +
                 "\"createdAt\": \"" + createdAt + "\"," +
                 "\"updatedAt\": \"" + updatedAt + "\"," +
                 "\"createdBy\": \"" + createdBy + "\"," +

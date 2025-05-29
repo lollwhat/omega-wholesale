@@ -15,7 +15,12 @@ public abstract class CRUDController<T> {
         this.fileController = new FileController(filePath);
     }
 
+    private void ensureCorrectStaticFilePath() {
+        new FileController(this.filePath); // The constructor of FileController sets its static filePath
+    }
+
     public List<String> getAll() {
+        ensureCorrectStaticFilePath();
         try {
             List<String> lines = FileController.getFile();
             if (lines == null || lines.isEmpty()) {
@@ -46,6 +51,7 @@ public abstract class CRUDController<T> {
 
     public String getOneWithId(String id) {
         try {
+            ensureCorrectStaticFilePath();
             String[] details = fileController.getLine(0, id);
             if (details != null) {
 //                System.out.println(entityType.getDisplayName()+" found: " + String.join(",", details));
@@ -66,6 +72,7 @@ public abstract class CRUDController<T> {
 
     public void delete(String id) {
         try {
+            ensureCorrectStaticFilePath();
             fileController.deleteLine(id, 0);
             System.out.println(entityType.getDisplayName()+" deleted successfully");
         } catch (Exception e) {

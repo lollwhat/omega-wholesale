@@ -6,13 +6,17 @@ import controller.ItemController;
 import controller.StockController;
 import model.RoleName;
 import model.User;
+import util.table.mappers.ItemRowMapper;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Date;
@@ -491,8 +495,7 @@ public class InventoryManagerView extends JFrame {
         buttonWrapper.setOpaque(false);
 
         JButton viewItemsButton = createButton("View Items", e -> {
-            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
-
+//            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
 //            Object[][] items = controller.loadItems();
 //            if (items == null || items.length == 0) {
 //                quickAccessPanel.removeAll();
@@ -522,10 +525,47 @@ public class InventoryManagerView extends JFrame {
 //            quickAccessPanel.revalidate();
 //            quickAccessPanel.repaint();
 
-            Object[][] items = controller.loadItems();
-            String[] columns = controller.getItemTableColumns();
+//            Object[][] items = controller.loadItems();
+//            String[] columns = controller.getItemTableColumns();
+//
+//            handleViewButton("No items available at the moment."
 
-            handleViewButton("No items available at the moment.", items, columns);
+//            Object[][] items = controller.loadItems();
+
+            List<Object[]> items = new ArrayList<>();
+            try {
+                List<String> lines = Files.readAllLines(Paths.get("data/item_details.txt"));
+                for (String line : lines) {
+                    String[] columns = line.split(",");
+                    if (columns.length >= 10) {
+                        items.add(new Object[]{
+                                columns[0], // item ID
+                                columns[1], // item code
+                                columns[2], // item name
+                                columns[3], // item unit
+                                columns[4], // unit price
+                                columns[5], // supplier ID
+                                columns[6],  // created at
+                                columns[8],  // created by
+                                columns[7],  // updated at
+                                columns[9]  // updated by
+                        });
+                    } else {
+                        System.err.println("Malformed line in purchase_order_item.txt: " + line);
+                    }
+                }
+            } catch (IOException ex) {
+                System.err.println("Error reading items: " + ex.getMessage());
+            }
+
+            Object[][] item = items.toArray(new Object[0][]);
+
+            String[] columns = { // Made this an instance variable
+                    "Item Entry ID", "Item Code", "Name", "Unit", "Price", "Supplier ID",
+                    "Created At", "Created By", "Updated At", "Updated By"
+            };
+
+            handleViewButton("No items available at the moment.", item, columns);
         });
 
         JButton inventoryManagementButton = createButton("Inventory Management", e -> {
@@ -765,12 +805,46 @@ public class InventoryManagerView extends JFrame {
         buttonWrapper.setLayout(new GridLayout(3, 1, 10, 10));
 
         JButton viewItemsButton = createButton("View Items", e -> {
-            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
+//            InventoryManagerController controller = new InventoryManagerController(new ItemController(), new StockController());
+//
+//            Object[][] items = controller.loadItems();
+//            String[] columns = controller.getItemTableColumns();
+//
+//            handleViewButton("No items available at the moment.", items, columns);
+            List<Object[]> items = new ArrayList<>();
+            try {
+                List<String> lines = Files.readAllLines(Paths.get("data/item_details.txt"));
+                for (String line : lines) {
+                    String[] columns = line.split(",");
+                    if (columns.length >= 10) {
+                        items.add(new Object[]{
+                                columns[0], // item ID
+                                columns[1], // item code
+                                columns[2], // item name
+                                columns[3], // item unit
+                                columns[4], // unit price
+                                columns[5], // supplier ID
+                                columns[6],  // created at
+                                columns[8],  // created by
+                                columns[7],  // updated at
+                                columns[9]  // updated by
+                        });
+                    } else {
+                        System.err.println("Malformed line in purchase_order_item.txt: " + line);
+                    }
+                }
+            } catch (IOException ex) {
+                System.err.println("Error reading items: " + ex.getMessage());
+            }
 
-            Object[][] items = controller.loadItems();
-            String[] columns = controller.getItemTableColumns();
+            Object[][] item = items.toArray(new Object[0][]);
 
-            handleViewButton("No items available at the moment.", items, columns);
+            String[] columns = { // Made this an instance variable
+                    "Item Entry ID", "Item Code", "Name", "Unit", "Price", "Supplier ID",
+                    "Created At", "Created By", "Updated At", "Updated By"
+            };
+
+            handleViewButton("No items available at the moment.", item, columns);
         });
         viewItemsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 

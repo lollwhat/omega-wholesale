@@ -2,13 +2,13 @@ package model;
 
 
 public class DailySalesEntry {
-    private String dailySalesId, itemId, itemName, salesDate, createdAt, createdBy, updatedAt, updatedBy;
+    private String dailySalesId, itemCode, itemName, salesDate, createdAt, createdBy, updatedAt, updatedBy;
     private int quantity;
     private double netIncome;
 
-    public DailySalesEntry(String dailySalesId, String itemId, String itemName, String salesDate, int quantity, double netIncome, String createdAt, String createdBy, String updatedAt, String updatedBy) {
+    public DailySalesEntry(String dailySalesId, String itemCode, String itemName, String salesDate, int quantity, double netIncome, String createdAt, String createdBy, String updatedAt, String updatedBy) {
         this.dailySalesId = dailySalesId;
-        this.itemId = itemId;
+        this.itemCode = itemCode;
         this.itemName = itemName;
         this.salesDate = salesDate;
         this.quantity = quantity;
@@ -22,8 +22,8 @@ public class DailySalesEntry {
     public String getDailySalesId(){ return dailySalesId; }
     public void setDailySalesId(String dailySalesId){ this.dailySalesId = dailySalesId; }
 
-    public String getItemId(){ return itemId; }
-    public void setItemId(String itemId){ this.itemId = itemId; }
+    public String getItemCode(){ return itemCode; }
+    public void setItemCode(String itemCode){ this.itemCode = itemCode; }
 
     public String getItemName(){ return itemName; }
     public void setItemName(String itemName){ this.itemName = itemName; }
@@ -50,10 +50,10 @@ public class DailySalesEntry {
     public void setUpdatedBy(String updatedBy){ this.updatedBy = updatedBy; }
 
     public String toCSV() {
-        return dailySalesId + "," + itemId + "," + itemName  + "," + salesDate + "," + quantity + "," + netIncome + "," + createdAt + "," + createdBy + "," + updatedAt + "," + updatedBy;
+        return dailySalesId + "," + itemCode + "," + itemName  + "," + salesDate + "," + quantity + "," + netIncome + "," + createdAt + "," + createdBy + "," + updatedAt + "," + updatedBy;
     }
 
     public String toJSON() {
-        return "{ \"dailySalesId\": \"" + dailySalesId + "\", \"itemId\": \"" + itemId + "\", \"itemName\": \"" + itemName + "\", \"salesDate\": \"" + salesDate + "\", \"quantity\": " + quantity + "\", \"netIncome\": " + netIncome + ", \"createdAt\": \"" + createdAt + "\", \"createdBy\": \"" + createdBy + "\", \"updatedAt\": \"" + updatedAt + "\", \"updatedBy\": \"" + updatedBy + "\" }";
+        return "{ \"dailySalesId\": \"" + dailySalesId + "\", \"itemCode\": \"" + itemCode + "\", \"itemName\": \"" + itemName + "\", \"salesDate\": \"" + salesDate + "\", \"quantity\": " + quantity + "\", \"netIncome\": " + netIncome + ", \"createdAt\": \"" + createdAt + "\", \"createdBy\": \"" + createdBy + "\", \"updatedAt\": \"" + updatedAt + "\", \"updatedBy\": \"" + updatedBy + "\" }";
     }
 }

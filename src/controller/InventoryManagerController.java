@@ -326,7 +326,7 @@ public class InventoryManagerController {
 
     // columns names for table header - Inventory Management (Stock)
     public String[] getStockTableColumns() {
-        return new String[]{"Item ID", "Name", "Current Stock", "Min Stock", "Max Stock", "Status", "Last Updated"};
+        return new String[]{"Item ID", "Name", "Current Stock", "Min Stock", "Max Stock", "Status", "Last Updated", "Actions"};
     }
 
     // columns names for table header - Inventory Management (POs with Items)

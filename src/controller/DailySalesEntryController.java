@@ -54,7 +54,7 @@ public class DailySalesEntryController extends CRUDController<DailySalesEntry> {
                 return;
             }
             DailySalesEntry dailySalesEntry = new DailySalesEntry(dailySalesId, itemId, itemName, salesDate, quantity, netIncome, existingDailySalesEntryDetails[4], existingDailySalesEntryDetails[5], existingDailySalesEntryDetails[6], existingDailySalesEntryDetails[7]);
-            dailySalesEntry.setItemId((itemId != null) ? itemId : existingDailySalesEntryDetails[1]);
+            dailySalesEntry.setItemCode((itemId != null) ? itemId : existingDailySalesEntryDetails[1]);
             dailySalesEntry.setItemName((itemName != null) ? itemName : existingDailySalesEntryDetails[2]);
             dailySalesEntry.setSalesDate((salesDate != null) ? salesDate : existingDailySalesEntryDetails[3]);
             dailySalesEntry.setQuantity((quantity != 0) ? quantity : Integer.parseInt(existingDailySalesEntryDetails[4]));

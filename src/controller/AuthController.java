@@ -41,7 +41,7 @@ public class AuthController extends CRUDController<User>{
     public User login(String username, String password){
         List<String> userData = FileController.getFile();
         for (String line : userData) {
-            System.out.println(line);
+//            System.out.println(line);
             String[] details = line.split(",");
             if (details[1].trim().equals(username) && details[2].trim().equals(password)) {
                 String userId = details[0].trim();
