@@ -50,6 +50,13 @@ public class AddItemForm extends BaseForm {
         }
     }
 
+    @Override
+    protected JPanel createFormFieldPanel(String labelText, String placeholder) {
+        JPanel panel = super.createFormFieldPanel(labelText, placeholder);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return panel;
+    }
+
     private void loadEditData() {
         System.out.println("AddItemForm: Loading edit data for item ID: " + editItemId);
         if (editItemId != null) {
@@ -161,14 +168,14 @@ public class AddItemForm extends BaseForm {
             System.err.println("AddItemForm.loadSuppliers: supplierListModel is null. UI elements not ready.");
             supplierListModel = new DefaultListModel<>(); // Initialize if somehow still null
         }
-        supplierListModel.clear();
+//        supplierListModel.clear();
 
         // Ensure map is initialized (this is the fix for the NPE)
-        if (this.supplierDisplayToIdMap == null) {
-            this.supplierDisplayToIdMap = new HashMap<>();
-        } else {
-            this.supplierDisplayToIdMap.clear();
-        }
+//        if (this.supplierDisplayToIdMap == null) {
+//            this.supplierDisplayToIdMap = new HashMap<>();
+//        } else {
+//            this.supplierDisplayToIdMap.clear();
+//        }
 
         try {
             SupplierController supplierController = new SupplierController();

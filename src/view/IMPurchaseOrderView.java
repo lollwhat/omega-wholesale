@@ -1,12 +1,12 @@
 package view;
 
 import controller.PurchaseOrderController;
+import controller.StockController;
 import controller.SupplierController;
 import model.PurchaseOrder;
 import model.PurchaseOrderItem;
 import util.table.GenericModelHelper;
 import util.table.mappers.PurchaseOrderRowMapper;
-// import view.forms.AddPurchaseOrderForm; // Placeholder for when this form is created
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -17,16 +17,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-public class PurchaseOrderView extends JFrame {
-    private final Color darkBlue = UITheme.DARK_BLUE;
-    private final Color mediumBlue = UITheme.MEDIUM_BLUE;
-    private final Color lightBlue = UITheme.LIGHT_BLUE;
-    protected final Color verylightBlue = UITheme.VERY_LIGHT_BLUE;
-    private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE;
-    private final Color textWhite = UITheme.TEXT_WHITE;
+public class IMPurchaseOrderView extends JFrame {
+    private final Color darkBlue = UITheme.DARK_BLUE; // Example: new Color(23, 32, 42);
+    private final Color mediumBlue = UITheme.MEDIUM_BLUE; // Example: new Color(44, 62, 80);
+    private final Color lightBlue = UITheme.LIGHT_BLUE; // Example: new Color(52, 152, 219);
+    protected final Color verylightBlue = UITheme.VERY_LIGHT_BLUE; // Example: new Color(212, 230, 241);
+    private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE; // Example: new Color(133, 193, 233);
+    private final Color textWhite = UITheme.TEXT_WHITE; // Example: Color.WHITE;
 
     private JTable poTable;
     private DefaultTableModel poTableModel;
@@ -37,13 +37,14 @@ public class PurchaseOrderView extends JFrame {
     private final String[] poColumnNames = {
             "PO ID", "PR ID", "Notes", "Supplier", "Status",
             "Created At", "Created By", "Updated At", "Updated By",
-            "Received At", "Received By"
+            "Received At", "Received By", "Actions"
     };
-    private static final String[] PO_STATUS_DIALOG_OPTIONS = {"Pending", "Received", "Cancelled"};
+    // Ensure this order matches your status logic, especially for "Approved"
+    private static final String[] PO_STATUS_DIALOG_OPTIONS = {"Pending", "Approved", "Received", "Cancelled"};
     private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
 
 
-    public PurchaseOrderView() {
+    public IMPurchaseOrderView() {
         setTitle("Purchase Order Management");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -67,45 +68,29 @@ public class PurchaseOrderView extends JFrame {
         headerPanel.setBackground(mediumBlue);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JLabel titleLabel = new JLabel("List of Purchase Order");
+        JLabel titleLabel = new JLabel("Receive Purchase Order");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(highlightBlue);
-
-//        JButton createPOButton = createActionButton("Create PO (Placeholder)",
-//                _ -> JOptionPane.showMessageDialog(this, "PO Creation process to be implemented (e.g., from approved PRs)."));
-//        createPOButton.setFont(new Font("Arial", Font.BOLD, 14));
-//        createPOButton.setBackground(highlightBlue);
 
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         titlePanel.setBackground(mediumBlue);
         titlePanel.add(titleLabel);
 
-//        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-//        buttonPanel.setBackground(mediumBlue);
-//        buttonPanel.add(createPOButton);
-
         headerPanel.add(titlePanel, BorderLayout.NORTH);
-//        headerPanel.add(buttonPanel, BorderLayout.CENTER);
 
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(darkBlue);
-        tablePanel.add(createPOTable(), BorderLayout.CENTER);
+        tablePanel.add(createPOTable(), BorderLayout.CENTER); // POActionButtonPanel is constructed here
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        refreshTable();
+        refreshTable(); // Data is loaded after POActionButtonPanel construction
         return mainPanel;
     }
 
-    private void showCreatePOForm(String prId) {
-        JOptionPane.showMessageDialog(this, "Functionality to create PO from PR " + prId + " to be implemented.");
-    }
-
-    private void showEditPurchaseOrderForm(String poIdToEdit){
-        JOptionPane.showMessageDialog(this, "Functionality to edit PO " + poIdToEdit + " to be implemented via a dedicated PO edit form.");
-        showPurchaseOrderDetailsPopup(poIdToEdit);
-    }
+    // private void showCreatePOForm(String prId) { ... } // Unchanged
+    // private void showEditPurchaseOrderForm(String poIdToEdit){ ... } // Unchanged
 
 
     public void refreshTable() {
@@ -124,7 +109,7 @@ public class PurchaseOrderView extends JFrame {
             }
 
             poTableModel.setRowCount(0);
-            this.poController = new PurchaseOrderController();
+            // this.poController = new PurchaseOrderController(); // Re-instantiating might lose state if intended
             List<PurchaseOrder> poHeaders = poController.getAllPurchaseOrderHeaders();
 
             if (poHeaders != null && !poHeaders.isEmpty()) {
@@ -147,7 +132,7 @@ public class PurchaseOrderView extends JFrame {
         if (this.supplierController == null) this.supplierController = new SupplierController();
         if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController);
 
-        List<String> initialEmptyData = new ArrayList<>();
+        List<String> initialEmptyData = new ArrayList<>(); // Table starts empty
         this.poTableModel = GenericModelHelper.createGenericTableModel(
                 initialEmptyData,
                 this.poColumnNames,
@@ -179,13 +164,13 @@ public class PurchaseOrderView extends JFrame {
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Updated By
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(150); // Received At
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Received By
-//        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(230); // Actions
+        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Actions
 
 
-//        POActionButtonPanel actionPanel = new POActionButtonPanel(this.poTable);
+        POActionButtonPanel actionPanel = new POActionButtonPanel(this.poTable);
         int actionsColumnIndex = poColumnNames.length - 1;
-//        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellRenderer(actionPanel);
-//        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellEditor(actionPanel);
+        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellRenderer(actionPanel);
+        poTable.getColumnModel().getColumn(actionsColumnIndex).setCellEditor(actionPanel);
 
         poTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -225,54 +210,99 @@ public class PurchaseOrderView extends JFrame {
         return button;
     }
 
-//    class POActionButtonPanel extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
-//        private final JPanel panel;
-//        private final JTable containingTable;
-//        private int currentRow;
-//
-//        public POActionButtonPanel(JTable table) {
-//            this.containingTable = table;
-//            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
-//            panel.setOpaque(true);
-//
-//            JButton viewButton = createActionButton("View Details", e -> {
-//                fireEditingStopped();
-//                String poId = (String) containingTable.getValueAt(currentRow, 0);
-//                showPurchaseOrderDetailsPopup(poId);
-//            });
-//
-//            JButton statusButton = createActionButton("Update Status", e -> {
-//                fireEditingStopped();
-//                String poId = (String) containingTable.getValueAt(currentRow, 0);
-//                Object statusValue = containingTable.getValueAt(currentRow, 4);
-//                String currentStatusStr = (statusValue != null) ? statusValue.toString() : PO_STATUS_DIALOG_OPTIONS[0];
-//                updatePOStatusDialog(poId, currentStatusStr);
-//            });
-//
-//            panel.add(viewButton);
-//            panel.add(statusButton);
-//        }
-//
-//        @Override
-//        public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
-//            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? darkBlue : new Color(40, 50, 70)));
-//            return panel;
-//        }
-//        @Override
-//        public Component getTableCellEditorComponent(JTable tbl, Object val, boolean isSel, int r, int c) {
-//            this.currentRow = r;
-//            panel.setBackground(tbl.getSelectionBackground());
-//            return panel;
-//        }
-//        @Override public Object getCellEditorValue() { return ""; }
-//        @Override public boolean stopCellEditing() { return super.stopCellEditing(); }
-//    }
+    // --- MODIFIED POActionButtonPanel ---
+    class POActionButtonPanel extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
+        private final JPanel panel;
+        private final JButton statusButton; // Made statusButton an instance variable
+        private final JTable containingTable;
+        private int currentRow;
 
+        private final String APPROVED_STATUS_STRING = PO_STATUS_DIALOG_OPTIONS[1];
+
+        public POActionButtonPanel(JTable table) {
+            this.containingTable = table;
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
+            panel.setOpaque(true); // Good practice for renderers
+
+            // Create the button using the outer class's method.
+            // The ActionListener will only be effectively triggered if the button is enabled.
+            statusButton = createActionButton("Update Status", e -> {
+                fireEditingStopped(); // Important for JTable to commit any editor changes
+
+                // 'currentRow' is set by getTableCellEditorComponent
+                if (currentRow >= 0 && currentRow < this.containingTable.getRowCount()) {
+                    String poId = (String) this.containingTable.getValueAt(currentRow, 0);
+                    Object statusValue = this.containingTable.getValueAt(currentRow, 4); // Status column index
+                    // Default to first option if current status is null, or use actual status
+                    String currentStatusStr = (statusValue != null) ? statusValue.toString() : PO_STATUS_DIALOG_OPTIONS[0];
+
+                    updatePOStatusDialog(poId, currentStatusStr);
+                } else {
+                    System.err.println("POActionButtonPanel: Invalid currentRow (" + currentRow + ") when Update Status clicked.");
+                }
+            });
+            panel.add(statusButton);
+            // NO data access (getValueAt) in constructor anymore
+        }
+
+        private void refreshButtonEnabledState(JTable tableContext, int row) {
+            boolean enableButton = false;
+            if (row >= 0 && row < tableContext.getRowCount()) {
+                // Status is at column index 4 ("Status")
+                Object statusCell = tableContext.getValueAt(row, 4);
+                String currentStatus = (statusCell != null) ? statusCell.toString() : "";
+
+                if (APPROVED_STATUS_STRING.equalsIgnoreCase(currentStatus)) {
+                    enableButton = true;
+                }
+            }
+            statusButton.setEnabled(enableButton);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
+            // Update the button's enabled state for the current row being rendered
+            refreshButtonEnabledState(tbl, r);
+
+            // Set panel background (using your existing logic for colors)
+            if (isSel) {
+                panel.setBackground(tbl.getSelectionBackground());
+            } else {
+                // 'darkBlue' is an accessible member of the outer class IMPurchaseOrderView
+                panel.setBackground(r % 2 == 0 ? darkBlue : new Color(40, 50, 70));
+            }
+            return panel;
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable tbl, Object val, boolean isSel, int r, int c) {
+            this.currentRow = r; // Set the current row when editing begins
+
+            refreshButtonEnabledState(tbl, r);
+
+            panel.setBackground(tbl.getSelectionBackground());
+            return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return ""; // Or any other appropriate value, like the button's text or an action command
+        }
+
+        @Override
+        public boolean stopCellEditing() {
+            // Important to call super.stopCellEditing() for proper event firing
+            return super.stopCellEditing();
+        }
+    }
+
+    // TODO: Implement the method to show the Create PO form
     private void updatePOStatusDialog(String poId, String currentStatusStr) {
         JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         int currentStatusIndex = 0;
-        for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
-            if(PO_STATUS_DIALOG_OPTIONS[i].equalsIgnoreCase(currentStatusStr)){
+        StockController stockController = new StockController();
+        for (int i = 0; i < PO_STATUS_DIALOG_OPTIONS.length; i++) {
+            if (PO_STATUS_DIALOG_OPTIONS[i].equalsIgnoreCase(currentStatusStr)) {
                 currentStatusIndex = i;
                 break;
             }
@@ -285,31 +315,59 @@ public class PurchaseOrderView extends JFrame {
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 PO_STATUS_DIALOG_OPTIONS,
-                PO_STATUS_DIALOG_OPTIONS[currentStatusIndex]
+                PO_STATUS_DIALOG_OPTIONS[currentStatusIndex] // Default to current status
         );
 
-        if (newStatusStr != null) {
+        if (newStatusStr != null) { // User selected a status and didn't cancel
             int newStatusInt = -1;
-            for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
-                if(PO_STATUS_DIALOG_OPTIONS[i].equals(newStatusStr)){
+            for (int i = 0; i < PO_STATUS_DIALOG_OPTIONS.length; i++) {
+                if (PO_STATUS_DIALOG_OPTIONS[i].equals(newStatusStr)) {
                     newStatusInt = i;
                     break;
                 }
             }
 
             if (newStatusInt != -1) {
+                // Ensure poController and stockController are initialized (e.g., class members or new instances)
+                // PurchaseOrderController poController = new PurchaseOrderController(); // If not already a class member
+                // StockController stockController = new StockController(); // If not already a class member
+
+                boolean operationSuccess = false;
+                String successMessage = "";
+                String errorMessage = "";
+
                 try {
-                    this.poController = new PurchaseOrderController();
-                    boolean success = poController.updatePurchaseOrderStatus(poId, newStatusInt);
-                    if (success) {
-                        JOptionPane.showMessageDialog(parentDialogFrame, "PO " + poId + " status updated to " + newStatusStr + ".", "Success", JOptionPane.INFORMATION_MESSAGE);
-                        refreshTable();
+                    if (newStatusInt == 2) { // If new status is "Received"
+                        // StockController.markPurchaseOrderAsReceived handles:
+                        // 1. Checking if PO is "Approved"
+                        // 2. Updating PO status to "Received" in purchase_order.txt
+                        // 3. Reading PO items and updating stock_details.txt
+                        operationSuccess = stockController.markPurchaseOrderAsReceived(poId);
+                        if (operationSuccess) {
+                            successMessage = "PO " + poId + " marked as received and stock updated successfully.";
+                        } else {
+                            // markPurchaseOrderAsReceived typically prints specific errors to System.err
+                            errorMessage = "Failed to process PO " + poId + " as received. Check console for details.";
+                        }
+                    } else { // For other statuses (e.g., "Pending", "Approved", "Cancelled")
+                        operationSuccess = poController.updatePurchaseOrderStatus(poId, newStatusInt);
+                        if (operationSuccess) {
+                            successMessage = "PO " + poId + " status updated to " + newStatusStr + ".";
+                        } else {
+                            errorMessage = "Failed to update status for PO " + poId + ".";
+                        }
+                    }
+
+                    if (operationSuccess) {
+                        JOptionPane.showMessageDialog(parentDialogFrame, successMessage, "Success", JOptionPane.INFORMATION_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(parentDialogFrame, "Failed to update status for PO " + poId + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(parentDialogFrame, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(parentDialogFrame, "Error updating PO status: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(parentDialogFrame, "Error during PO status update: " + ex.getMessage(), "Operation Error", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace(); // For debugging
+                } finally {
+                    refreshTable(); // Refresh table to show the updated status or reflect failed attempts
                 }
             }
         }
@@ -318,7 +376,7 @@ public class PurchaseOrderView extends JFrame {
 
     private void showPurchaseOrderDetailsPopup(String poId) {
         JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        this.poController = new PurchaseOrderController();
+        // this.poController = new PurchaseOrderController(); // Re-instantiating might be problematic
         PurchaseOrder po = poController.getFullPurchaseOrderById(poId);
         if (po == null) {
             JOptionPane.showMessageDialog(parentDialogFrame, "Could not retrieve details for PO ID: " + poId, "Error", JOptionPane.ERROR_MESSAGE);
@@ -348,7 +406,8 @@ public class PurchaseOrderView extends JFrame {
 
         String supplierDisplay = "N/A";
         if (po.getSupplierId() != null && !po.getSupplierId().isEmpty()) {
-            if (supplierController == null) supplierController = new SupplierController(); else this.supplierController = new SupplierController();
+            // if (supplierController == null) supplierController = new SupplierController(); else this.supplierController = new SupplierController();
+            // Re-instantiating controller here might not be ideal, ensure it's the correct instance
             String supData = supplierController.getOneWithId(po.getSupplierId());
             if (supData != null) {
                 String[] supParts = supData.split(",");
@@ -358,8 +417,8 @@ public class PurchaseOrderView extends JFrame {
             }
         }
         addDetailRow(headerDetailsPanel, "Supplier:", supplierDisplay);
-        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController); // Ensure mapper is init
-        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus()));
+        // if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController);
+        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus())); // getStatusString needs int
         addDetailRow(headerDetailsPanel, "Created At:", po.getCreatedAt());
         addDetailRow(headerDetailsPanel, "Created By:", po.getCreatedBy());
         addDetailRow(headerDetailsPanel, "Updated At:", po.getUpdatedAt());
@@ -382,8 +441,8 @@ public class PurchaseOrderView extends JFrame {
         DefaultTableModel itemsDetailTableModel = new DefaultTableModel(itemTableColumns, 0);
         if (po.getItems() != null) {
             for (PurchaseOrderItem item : po.getItems()) {
-                double displayPrice = (double) item.getPrice();
-                double displayTotalPrice = (double) item.getTotalPrice();
+                double displayPrice = item.getPrice(); // Assuming getPrice returns double
+                double displayTotalPrice = item.getTotalPrice(); // Assuming getTotalPrice returns double
 
                 itemsDetailTableModel.addRow(new Object[]{
                         item.getItemId(), item.getItemCode(), item.getItemName(),
@@ -437,7 +496,9 @@ public class PurchaseOrderView extends JFrame {
         SwingUtilities.invokeLater(() -> {
             JFrame testFrame = new JFrame("Test PO Management View");
             testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            testFrame.getContentPane().add(new PurchaseOrderView());
+
+            IMPurchaseOrderView poView = new IMPurchaseOrderView();
+            testFrame.getContentPane().add(poView.createPurchaseOrderPanel()); // Use the panel directly or the frame
             testFrame.pack();
             testFrame.setLocationRelativeTo(null);
             testFrame.setVisible(true);

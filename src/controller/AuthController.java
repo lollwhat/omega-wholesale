@@ -27,10 +27,13 @@ public class AuthController extends CRUDController<User>{
                 break;
             case "PM":
                 user = new PurchaseManager(userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+                break;
             case "IM":
                 user = new InventoryManager(userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+                break;
             case "FM":
                 user = new FinanceManager(userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+                break;
             default:
                 break;
         }
@@ -69,26 +72,33 @@ public class AuthController extends CRUDController<User>{
         String roleCode = user.getUserID().substring(0, 2);
         switch (roleCode){
             case "AM" :
-                String[] menuItems = {"Dashboard", "User Management", "Item Management", "Supplier Management", "Daily Sales Entry", "Create Purchase Requisition", "View Requisitions", "Create Purchase Order", "View Purchase Orders"};
+                String[] menuItems = {"Home", "User Management", "Item Management", "Supplier Management", "Daily Sales Entry", "Create Purchase Requisition", "View Requisitions", "Create Purchase Order", "View Purchase Orders"};
                 String[] quickOptions = {"User Management", "Item Management", "Supplier Management"};
                 new AdminView((Admin) user, menuItems, quickOptions);
                 break;
             case "SM":
                 menuItems = new String[]{
+                        "Home",
                         "Item Management",
                         "Supplier Management",
-                        "Daily Sales Entry",
+                        "Stock Overview & Requisition",
                         "Create Purchase Requisition",
-                        "List of Purchase Orders"
+                        "List of Purchase Orders",
+                        "Daily Sales Entry"
                 };
                 quickOptions = new String[]{"Item Management", "Supplier Management", "Daily Sales Entry"};
                 new SalesManagerView((SalesManager) user, menuItems, quickOptions);
                 break;
             case "PM":
-                PurchaseManagerView PurchaseManager = new PurchaseManagerView(user);
+                menuItems = new String[]{"Home", "View Item", "View Supplier", "View Purchase Requisition", "Purchase Order Management"};
+                quickOptions = new String[]{"View Item", "View Supplier", "View Purchase Requisition"};
+                new PurchaseManagerView((PurchaseManager) user, menuItems, quickOptions);
                 break;
             case "IM":
-                InventoryManagerView InventoryManager = new InventoryManagerView(user);
+//                InventoryManagersView InventoryManager = new InventoryManagersView(user);
+                menuItems = new String[]{"Home", "View Item", "Inventory Management", "Receive Purchase Order"};
+                quickOptions = new String[]{"View Item", "Inventory Management", "Receive Purchase Order"};
+                new InventoryManagerView((InventoryManager) user, menuItems, quickOptions);
                 break;
             case "FM":
                 FinanceManagerView FinanceManager = new FinanceManagerView(user);

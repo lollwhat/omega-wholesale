@@ -39,18 +39,15 @@ public class PurchaseRequisitionSeeder {
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(PR_HEADER_FILE, false)); // false to overwrite
 
-            writer.write("PR001,Seeder Notes A,SUP001," + getStatusInt("approved") + "," + createdAt + "," + createdBy + "," + createdAt + "," + createdBy + "\n");
-            writer.write("PR002,Seeder Notes B,SUP001," + getStatusInt("approved") + "," + createdAt + "," + createdBy + "," + createdAt + "," + createdBy + "\n");
-            writer.write("PR003,Seeder Notes C,SUP002," + getStatusInt("pending") + "," + createdAt + "," + createdBy + "," + createdAt + "," + createdBy + "\n");
-            writer.write("PR004,Seeder Notes D,SUP003," + getStatusInt("rejected") + "," + createdAt + "," + createdBy + "," + createdAt + "," + createdBy + "\n");
-            writer.write("PR0045Seeder Notes E,SUP001," + getStatusInt("approved") + "," + createdAt + "," + createdBy + "," + createdAt + "," + createdBy + "\n");
+            writer.write("PR001,Urgent request for new Laptops and Mice,"+getStatusInt("pending")+",2025-05-29 10:00:00,SM001,2025-05-29 10:00:00,SM001\n" +
+                    "PR002,Quarterly restock of Monitors and SSDs,"+getStatusInt("approved")+",2025-05-29 10:05:00,SM001,2025-05-29 10:10:00,SM001\n" +
+                    "PR003,Keyboards for new office setup,"+getStatusInt("pending")+",2025-05-29 10:15:00,SM001,2025-05-29 10:15:00,SM001\n");
 
             System.out.println("Successfully seeded data to " + PR_HEADER_FILE);
             writer.close();
         } catch (Exception e) {
             System.err.println("Error seeding data to " + PR_HEADER_FILE + ": " + e.getMessage());
-            e.printStackTrace();
-        }
+    }
     }
 
      public static void main(String[] args) {

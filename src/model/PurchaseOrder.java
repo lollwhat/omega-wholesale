@@ -8,7 +8,7 @@ public class PurchaseOrder {
     private String prId;
     private String notes;
     private String supplierId;
-    private int status; // 0: processing, 1: received, 2: cancelled
+    private int status; // 0: pending, 1: received, 2: cancelled
     private String createdAt;
     private String createdBy;
     private String updatedAt;
@@ -30,8 +30,8 @@ public class PurchaseOrder {
         this.createdBy = createdBy;
         this.updatedAt = updatedAt;
         this.updatedBy = updatedBy;
-        this.receivedAt = (receivedAt == null || receivedAt.equalsIgnoreCase("processing")) ? null : receivedAt;
-        this.receivedBy = (receivedBy == null || receivedBy.equalsIgnoreCase("processing")) ? null : receivedBy;
+        this.receivedAt = (receivedAt == null || receivedAt.equalsIgnoreCase("Pending")) ? null : receivedAt;
+        this.receivedBy = (receivedBy == null || receivedBy.equalsIgnoreCase("Pending")) ? null : receivedBy;
         this.items = itemsList != null ? new ArrayList<>(itemsList) : new ArrayList<>();
         for (PurchaseOrderItem item : this.items) {
             if (item.getPoId() == null || !item.getPoId().equals(this.poId)) {
@@ -75,10 +75,10 @@ public class PurchaseOrder {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String getReceivedAt() { return receivedAt; }
-    public void setReceivedAt(String receivedAt) { this.receivedAt = (receivedAt != null && receivedAt.equalsIgnoreCase("processing")) ? null : receivedAt; }
+    public void setReceivedAt(String receivedAt) { this.receivedAt = (receivedAt != null && receivedAt.equalsIgnoreCase("Pending")) ? null : receivedAt; }
 
     public String getReceivedBy() { return receivedBy; }
-    public void setReceivedBy(String receivedBy) { this.receivedBy = (receivedBy != null && receivedBy.equalsIgnoreCase("processing")) ? null : receivedBy; }
+    public void setReceivedBy(String receivedBy) { this.receivedBy = (receivedBy != null && receivedBy.equalsIgnoreCase("Pending")) ? null : receivedBy; }
 
     public List<PurchaseOrderItem> getItems() { return items; }
 

@@ -23,15 +23,18 @@ public class SalesManagerView extends DashboardView {
             case "Supplier Management":
                 SupplierManagementView supplierManagementView = new SupplierManagementView();
                 return supplierManagementView.createSupplierManagementPanel();
-            case "Daily Sales Entry":
-                DailySalesEntryView dailySalesEntryView = new DailySalesEntryView();
-                return dailySalesEntryView.createDailySalesEntryPanel();
+            case "Stock Overview & Requisition":
+                StockManagementView stockManagementView = new StockManagementView();
+                return stockManagementView.createStockManagementPanel();
             case "Create Purchase Requisition":
                 PurchaseRequisitionView purchaseRequisitionView = new PurchaseRequisitionView();
                 return purchaseRequisitionView.createPurchaseRequisitionManagementPanel();
             case "List of Purchase Orders":
                 PurchaseOrderView purchaseOrdersView = new PurchaseOrderView();
                 return purchaseOrdersView.createPurchaseOrderPanel();
+            case "Daily Sales Entry":
+                DailySalesEntryView dailySalesEntryView = new DailySalesEntryView();
+                return dailySalesEntryView.createDailySalesEntryPanel();
             default:
                 return createDashboardContentPanel(quickOptions);
         }

@@ -9,7 +9,7 @@ import java.util.Map;
 public class PurchaseOrderRowMapper implements RowDataMapper {
     private static final int EXPECTED_HEADER_FIELDS = 11;
     // 0: processing, 1: approved, 2: received, 3: cancelled
-    private static final String[] STATUS_MAP = {"Processing", "Approved", "Received", "Cancelled", "Unknown"};
+    private static final String[] STATUS_MAP = {"Pending", "Approved", "Received", "Cancelled", "Unknown"};
 
     private Map<String, String> supplierNameCache;
     private SupplierController supplierController;
