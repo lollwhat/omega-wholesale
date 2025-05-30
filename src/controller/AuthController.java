@@ -72,17 +72,17 @@ public class AuthController extends CRUDController<User>{
         String roleCode = user.getUserID().substring(0, 2);
         switch (roleCode){
             case "AM" :
-                String[] menuItems = {"Home", "User Management", "Item Management", "Supplier Management", "Daily Sales Entry", "Create Purchase Requisition", "View Requisitions", "Create Purchase Order", "View Purchase Orders"};
+                String[] menuItems = {"Dashboard", "User Management", "Item Management", "Supplier Management", "Inventory Management", "Stock Overview & Create Purchase Requisition", "Purchase Requisition Management", "PR Overview & Create Purchase Order", "Receive Purchase Order", "Daily Sales Entry"};
                 String[] quickOptions = {"User Management", "Item Management", "Supplier Management"};
                 new AdminView((Admin) user, menuItems, quickOptions);
                 break;
             case "SM":
                 menuItems = new String[]{
-                        "Home",
+                        "Dashboard",
                         "Item Management",
                         "Supplier Management",
-                        "Stock Overview & Requisition",
-                        "Create Purchase Requisition",
+                        "Stock Overview & Create Requisition",
+                        "Purchase Requisition Management",
                         "List of Purchase Orders",
                         "Daily Sales Entry"
                 };
@@ -90,13 +90,13 @@ public class AuthController extends CRUDController<User>{
                 new SalesManagerView((SalesManager) user, menuItems, quickOptions);
                 break;
             case "PM":
-                menuItems = new String[]{"Home", "View Item", "View Supplier", "View Purchase Requisition", "Purchase Order Management"};
-                quickOptions = new String[]{"View Item", "View Supplier", "View Purchase Requisition"};
+                menuItems = new String[]{"Dashboard", "View Item", "View Supplier", "PR Overview & Create Purchase Order", "List of Purchase Orders"};
+                quickOptions = new String[]{"View Item", "View Supplier", "PR Overview & Create Purchase Order"};
                 new PurchaseManagerView((PurchaseManager) user, menuItems, quickOptions);
                 break;
             case "IM":
 //                InventoryManagersView InventoryManager = new InventoryManagersView(user);
-                menuItems = new String[]{"Home", "View Item", "Inventory Management", "Receive Purchase Order"};
+                menuItems = new String[]{"Dashboard", "View Item", "Inventory Management", "Receive Purchase Order"};
                 quickOptions = new String[]{"View Item", "Inventory Management", "Receive Purchase Order"};
                 new InventoryManagerView((InventoryManager) user, menuItems, quickOptions);
                 break;

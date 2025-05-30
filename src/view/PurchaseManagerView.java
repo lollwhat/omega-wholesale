@@ -5,7 +5,7 @@ import model.PurchaseManager;
 import javax.swing.*;
 
 public class PurchaseManagerView extends DashboardView {
-    private final String[] quickOptions = {"View Item", "View Supplier", "View Purchase Requisition"};
+    private final String[] quickOptions = {"View Item", "View Supplier", "PR Overview & Create Purchase Order"};
 
     public PurchaseManagerView(PurchaseManager purchaseManager , String [] menuItems, String[] quickOptions) {
         super(purchaseManager, menuItems, quickOptions);
@@ -20,10 +20,10 @@ public class PurchaseManagerView extends DashboardView {
             case "View Supplier":
                 SupplierManagementView supplierManagementView = new SupplierManagementView();
                 return supplierManagementView.createViewSupplierPanel();
-            case "View Purchase Requisition":
+            case "PR Overview & Create Purchase Order":
                 PMPurchaseRequisitionView pmPurchaseRequisitionView = new PMPurchaseRequisitionView();
                 return pmPurchaseRequisitionView.createPMPurchaseRequisitionPanel();
-            case "Purchase Order Management":
+            case "List of Purchase Orders":
                 PurchaseOrderView purchaseOrderView = new PurchaseOrderView();
                 return purchaseOrderView.createPurchaseOrderPanel();
             default:

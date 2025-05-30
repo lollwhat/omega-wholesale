@@ -68,7 +68,7 @@ public class PMPurchaseRequisitionView extends JFrame {
         headerPanel.setBackground(mediumBlue);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JLabel titleLabel = new JLabel("Create PO from Purchase Requisition List");
+        JLabel titleLabel = new JLabel("Purchase Requisition Overview & Create Purchase Order");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(highlightBlue);
         titleLabel.setHorizontalAlignment(JLabel.CENTER);

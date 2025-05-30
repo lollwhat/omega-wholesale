@@ -23,10 +23,10 @@ public class SalesManagerView extends DashboardView {
             case "Supplier Management":
                 SupplierManagementView supplierManagementView = new SupplierManagementView();
                 return supplierManagementView.createSupplierManagementPanel();
-            case "Stock Overview & Requisition":
+            case "Stock Overview & Create Requisition":
                 StockManagementView stockManagementView = new StockManagementView();
                 return stockManagementView.createStockManagementPanel();
-            case "Create Purchase Requisition":
+            case "Purchase Requisition Management":
                 PurchaseRequisitionView purchaseRequisitionView = new PurchaseRequisitionView();
                 return purchaseRequisitionView.createPurchaseRequisitionManagementPanel();
             case "List of Purchase Orders":
