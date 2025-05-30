@@ -24,10 +24,12 @@ public class AdminView extends DashboardView {
             case "User Management":
                 UserManagementView userManagementPanel = new UserManagementView();
                 return userManagementPanel.createUserManagementPanel();
-//            case "Item Management":
-//                return createItemManagementPanel();
-//            case "Supplier Management":
-//                return createSupplierManagementPanel();
+            case "Item Management":
+                ItemManagementView itemManagementPanel = new ItemManagementView();
+                return itemManagementPanel.createItemManagementPanel();
+            case "Supplier Management":
+                SupplierManagementView supplierManagementView = new SupplierManagementView();
+                return supplierManagementView.createSupplierManagementPanel();
 //            case "Daily Sales Entry":
 //                return createDailySalesEntryPanel();
 //            case "Create Purchase Requisition":
