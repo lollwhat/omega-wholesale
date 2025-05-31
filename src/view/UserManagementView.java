@@ -334,6 +334,10 @@ public class UserManagementView {
 
         actionButton.addActionListener(_ ->{
             String username = usernameField.getText();
+            if(FileController.verifyUsername(username)) {
+                JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             String[] fullName = fullNameField.getText().trim().split("\\s+");
             String firstName = fullName[0];
             String lastName = "";

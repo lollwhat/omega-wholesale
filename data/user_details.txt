@@ -7,4 +7,3 @@ AM002, admin2, admin456, Jennifer, Davis, jenniferdavis@oswb.com, active, 2023-0
 SM002, sales2, sales456, Robert, Miller, robertmiller@oswb.com, active, 2023-05-07 11:30:00, 2023-05-07 11:30:00
 PM002, purchase2, purchase456, Patricia, Wilson, patriciawilson@oswb.com, active, 2023-05-08 13:45:00, 2023-05-08 13:45:00
 IM002, inventory2, inventory456, James, Taylor, jamestaylor@oswb.com, active, 2023-05-09 10:15:00, 2023-05-09 10:15:00
-AM003,test,test123,test123,,test123@gmail.com,active,2025-05-16 19:01:09,2025-05-16 19:01:09
