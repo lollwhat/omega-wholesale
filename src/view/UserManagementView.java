@@ -157,8 +157,13 @@ public class UserManagementView {
                 try {
                     table.getCellEditor().stopCellEditing();
 
-                    authController.switchUserStatus(userId);
-                    updateTable();
+                    int confirm = JOptionPane.showConfirmDialog(panel,
+                            "Are you sure you want to change the status of this user?",
+                            "Confirm Switch", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        authController.switchUserStatus(userId);
+                        updateTable();
+                    }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -334,10 +339,18 @@ public class UserManagementView {
 
         actionButton.addActionListener(_ ->{
             String username = usernameField.getText();
-            if(FileController.verifyUsername(username)) {
-                JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            if(isEditing){
+                if(FileController.verifyUsername(username, userData[0])) {
+                    JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }else{
+                if(FileController.verifyUsername(username)) {
+                    JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
+
             String[] fullName = fullNameField.getText().trim().split("\\s+");
             String firstName = fullName[0];
             String lastName = "";

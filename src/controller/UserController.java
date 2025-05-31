@@ -3,17 +3,17 @@ package controller;
 import model.RoleName;
 
 import javax.swing.table.DefaultTableModel;
-import java.util.Arrays;
 import java.util.List;
 
 public class UserController{
+    FileController fileController = new FileController("data/user_details.txt");
     List<String> userData = FileController.getFile();
 
     public DefaultTableModel addUserData(String[] columnNames){
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 6; // Only Actions column can be editable
+                return column == 6;
             }
         };
 
