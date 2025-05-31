@@ -1,10 +1,13 @@
 package view.forms;
 
 import controller.*;
+import model.PurchaseOrder;
 import model.PurchaseRequisition;
 import model.PurchaseRequisitionItem;
 import model.PurchaseOrderItem;
-import view.PMPurchaseRequisitionView; // For refreshing parent view
+import view.PMPurchaseOrderView; // For refreshing after edit
+import view.PMPurchaseRequisitionView; // For refreshing after add from PR
+import view.PurchaseOrderView; // For refreshing if this is the parent
 import view.UITheme;
 
 import javax.swing.*;
@@ -16,50 +19,41 @@ import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AddPurchaseOrderForm extends BaseForm {
+    private String editModePoId;
+    private PurchaseOrder existingPOForEdit;
+    private boolean isEditMode = false;
     private PurchaseRequisition sourcePR;
 
-    // PR Info (Read-Only)
     private JTextField prIdFieldDisplay;
-    private JTextArea prNotesDisplayArea;
-
-    // PO General Fields
     private JTextArea poGeneralNotesArea;
-
-    // PO Items Table
     private JTable poItemsTable;
     private DefaultTableModel poItemsTableModel;
 
-    // Controllers
     private SupplierController supplierController;
     private PurchaseOrderController purchaseOrderController;
+    private ItemController itemController; // Needed for item details if creating directly
 
     private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
-    private static final String PO_GENERAL_NOTES_PLACEHOLDER = "Enter general notes for this PO batch (optional)...";
-//    private static final String PR_NOTES_DISPLAY_PLACEHOLDER = "PR Notes will appear here.";
+    private static final String PO_GENERAL_NOTES_PLACEHOLDER = "Enter general notes for this PO (optional)...";
 
-    // Column indices for poItemsTable - Keep these updated!
     private static final int COL_ITEM_CODE = 0;
     private static final int COL_ITEM_NAME = 1;
-    private static final int COL_REQ_QTY = 2;
+    private static final int COL_REQ_QTY = 2; // Relevant for "Add from PR" mode
     private static final int COL_PO_QTY = 3;
     private static final int COL_UNIT_PRICE = 4;
-    private static final int COL_CHOSEN_SUPPLIER_PO = 5; // Editable ComboBox
+    private static final int COL_CHOSEN_SUPPLIER_PO = 5; // Supplier per item
     private static final int COL_TOTAL_PRICE = 6;
-    private static final int COL_SUGGESTED_SUPPLIERS_PR = 7; // Display only from PR
-    private static final int COL_ITEM_ENTRY_ID_HIDDEN = 8; // Hidden IMxxx ID
+    private static final int COL_SUGGESTED_SUPPLIERS_PR = 7; // Display only from PR (if applicable)
+    private static final int COL_ITEM_ENTRY_ID_HIDDEN = 8;
 
     private List<SupplierDisplayWrapper> allSuppliersForComboBoxCache;
 
-    // Wrapper for JComboBox items to store ID and display text
     private static class SupplierDisplayWrapper {
         String id; String display;
         SupplierDisplayWrapper(String id, String display) { this.id = id; this.display = display; }
@@ -69,39 +63,66 @@ public class AddPurchaseOrderForm extends BaseForm {
             if (this == obj) return true;
             if (obj == null || getClass() != obj.getClass()) return false;
             SupplierDisplayWrapper that = (SupplierDisplayWrapper) obj;
-            return id != null ? id.equals(that.id) : that.id == null;
+            return Objects.equals(id, that.id); // Use Objects.equals for null safety
         }
-        @Override public int hashCode() { return id != null ? id.hashCode() : 0; }
+        @Override public int hashCode() { return Objects.hash(id); }
     }
 
+    // Constructor for creating PO from a Purchase Requisition
     public AddPurchaseOrderForm(JFrame parent, PurchaseRequisition prData) {
-        super(parent, "Create Purchase Order(s) from PR: " + (prData != null ? prData.getPrId() : "N/A"), 780);
-        this.sourcePR = prData; // Set immediately
+        super(parent, "Create Purchase Order from PR: " + (prData != null ? prData.getPrId() : "N/A"), 780);
+        this.sourcePR = prData;
+        this.isEditMode = false;
+        this.editModePoId = null;
+        initializeControllers();
         this.allSuppliersForComboBoxCache = new ArrayList<>();
 
-        this.supplierController = new SupplierController();
-        this.purchaseOrderController = new PurchaseOrderController();
-
-        // createFormPanel() is called by super's initializeUI().
-        // Data loading and cell editor setup is deferred using invokeLater.
         SwingUtilities.invokeLater(() -> {
             loadAllSuppliersForComboBoxCache();
             loadPRDataIntoForm();
-            if (poItemsTable != null && poItemsTable.getColumnModel().getColumnCount() > COL_CHOSEN_SUPPLIER_PO) {
-                TableColumn supplierColumn = poItemsTable.getColumnModel().getColumn(COL_CHOSEN_SUPPLIER_PO);
-                if (allSuppliersForComboBoxCache != null && !allSuppliersForComboBoxCache.isEmpty()) {
-                    supplierColumn.setCellEditor(new SupplierCellEditorForRow(allSuppliersForComboBoxCache));
-                } else {
-                    System.err.println("AddPurchaseOrderForm: allSuppliersForComboBoxCache is not ready for cell editor setup.");
-                }
-            }
+            setupTableEditor();
         });
     }
+
+    // Constructor for editing an existing Purchase Order
+    public AddPurchaseOrderForm(JFrame parent, String poIdToEdit) {
+        super(parent, "Edit Purchase Order: " + poIdToEdit, 780);
+        this.editModePoId = poIdToEdit;
+        this.isEditMode = true;
+        this.sourcePR = null;
+        initializeControllers();
+        this.allSuppliersForComboBoxCache = new ArrayList<>();
+
+        SwingUtilities.invokeLater(() -> {
+            loadAllSuppliersForComboBoxCache();
+            loadExistingPODataForEdit();
+            setupTableEditor();
+        });
+    }
+
+    private void initializeControllers() {
+        this.supplierController = new SupplierController();
+        this.purchaseOrderController = new PurchaseOrderController();
+        this.itemController = new ItemController();
+    }
+
+    private void setupTableEditor() {
+        if (poItemsTable != null && poItemsTable.getColumnModel().getColumnCount() > COL_CHOSEN_SUPPLIER_PO) {
+            TableColumn supplierColumn = poItemsTable.getColumnModel().getColumn(COL_CHOSEN_SUPPLIER_PO);
+            if (allSuppliersForComboBoxCache != null && !allSuppliersForComboBoxCache.isEmpty()) {
+                supplierColumn.setCellEditor(new SupplierCellEditorForRow(allSuppliersForComboBoxCache));
+            } else {
+                System.err.println("AddPurchaseOrderForm: Supplier cache not ready for cell editor setup.");
+            }
+        }
+    }
+
 
     private void loadAllSuppliersForComboBoxCache() {
         allSuppliersForComboBoxCache.clear();
         allSuppliersForComboBoxCache.add(new SupplierDisplayWrapper(null, "-- Choose Supplier --"));
-        new FileController("data/supplier_details.txt"); // Workaround for static FileController
+        // Ensure FileController path is correctly set if SupplierController relies on it.
+        // new FileController("data/supplier_details.txt"); // May not be needed if controller handles its path
         List<String> supplierLines = supplierController.getAll();
         if (supplierLines != null) {
             for (String line : supplierLines) {
@@ -120,30 +141,24 @@ public class AddPurchaseOrderForm extends BaseForm {
             showError("Source Purchase Requisition data is missing.");
             dispose(); return;
         }
-        // PR ID display (using JTextField set to non-editable)
         setFieldValue(prIdFieldDisplay, sourcePR.getPrId(), "");
-        if (prIdFieldDisplay != null) { // Check if findTextFieldInPanel worked
+        if (prIdFieldDisplay != null) {
             prIdFieldDisplay.setEditable(false);
-            prIdFieldDisplay.setFocusable(false);
             prIdFieldDisplay.setBackground(darkBlue);
         }
-
-        // PO General Notes (editable, pre-filled with PR notes)
         setTextAreaValue(poGeneralNotesArea, sourcePR.getNotes(), PO_GENERAL_NOTES_PLACEHOLDER);
-
-
-        populatePOItemsTable();
+        populatePOItemsTableFromPR();
     }
 
-    private void populatePOItemsTable() {
+    private void populatePOItemsTableFromPR() {
         poItemsTableModel.setRowCount(0);
-        if (sourcePR != null && sourcePR.getItems() != null && allSuppliersForComboBoxCache != null && !allSuppliersForComboBoxCache.isEmpty()) {
+        if (sourcePR != null && sourcePR.getItems() != null && !allSuppliersForComboBoxCache.isEmpty()) {
             for (PurchaseRequisitionItem prItem : sourcePR.getItems()) {
                 if (prItem == null) continue;
                 double unitPrice = prItem.getPrice() / 100.0;
                 int requestedQty = prItem.getQuantity();
                 String suggestedSuppliersDisplay = prItem.getSuggestedSupplierIds().isEmpty() ?
-                        "None" :
+                        "None (Choose below)" :
                         prItem.getSuggestedSupplierIds().stream().collect(Collectors.joining(", "));
 
                 SupplierDisplayWrapper initialSupplierForPO = allSuppliersForComboBoxCache.get(0); // Default to "-- Choose --"
@@ -151,7 +166,7 @@ public class AddPurchaseOrderForm extends BaseForm {
                     String firstSuggestedId = prItem.getSuggestedSupplierIds().get(0);
                     for (SupplierDisplayWrapper sdw : allSuppliersForComboBoxCache) {
                         if (sdw.getId() != null && sdw.getId().equals(firstSuggestedId)) {
-                            initialSupplierForPO = sdw; // Pre-select first suggested supplier
+                            initialSupplierForPO = sdw;
                             break;
                         }
                     }
@@ -160,7 +175,7 @@ public class AddPurchaseOrderForm extends BaseForm {
                 poItemsTableModel.addRow(new Object[]{
                         prItem.getItemCode(), prItem.getItemName(), requestedQty, requestedQty,
                         CURRENCY_FORMAT.format(unitPrice),
-                        initialSupplierForPO,
+                        initialSupplierForPO, // Let user confirm or change this
                         CURRENCY_FORMAT.format(unitPrice * requestedQty),
                         suggestedSuppliersDisplay, prItem.getItemId()
                 });
@@ -168,22 +183,78 @@ public class AddPurchaseOrderForm extends BaseForm {
         }
     }
 
+    private void loadExistingPODataForEdit() {
+        if (!this.isEditMode || this.editModePoId == null) return;
+
+        // Ensure FileController paths for controller operations if they use static paths
+        // new FileController(purchaseOrderController.getPoHeaderFilePath());
+        // new FileController(purchaseOrderController.getPoItemsFilePath());
+        this.existingPOForEdit = purchaseOrderController.getFullPurchaseOrderById(this.editModePoId);
+
+        if (this.existingPOForEdit == null) {
+            showError("Could not load Purchase Order details for ID: " + this.editModePoId);
+            dispose(); return;
+        }
+
+        setTextAreaValue(poGeneralNotesArea, existingPOForEdit.getNotes(), PO_GENERAL_NOTES_PLACEHOLDER);
+        if (prIdFieldDisplay != null) {
+            setFieldValue(prIdFieldDisplay, existingPOForEdit.getPrId(), "N/A");
+            prIdFieldDisplay.setEditable(false);
+            prIdFieldDisplay.setBackground(darkBlue);
+        }
+
+        poItemsTableModel.setRowCount(0);
+        if (existingPOForEdit.getItems() != null) {
+            for (PurchaseOrderItem item : existingPOForEdit.getItems()) {
+                SupplierDisplayWrapper itemSupplierWrapper = null;
+                if (item.getSelectedSupplierId() != null && !item.getSelectedSupplierId().trim().isEmpty()) {
+                    for (SupplierDisplayWrapper sdw : allSuppliersForComboBoxCache) {
+                        if (sdw.getId() != null && sdw.getId().equals(item.getSelectedSupplierId())) {
+                            itemSupplierWrapper = sdw;
+                            break;
+                        }
+                    }
+                    if (itemSupplierWrapper == null) { // Supplier not in cache, show ID
+                        itemSupplierWrapper = new SupplierDisplayWrapper(item.getSelectedSupplierId(), item.getSelectedSupplierId() + " (Details N/A)");
+                    }
+                } else { // Fallback if item has no supplier ID (should not happen for valid item)
+                    itemSupplierWrapper = allSuppliersForComboBoxCache.isEmpty() ? null : allSuppliersForComboBoxCache.get(0);
+                }
+
+                double unitPrice = item.getPrice() / 100.0;
+                int poQty = item.getQuantity();
+                poItemsTableModel.addRow(new Object[]{
+                        item.getItemCode(),
+                        item.getItemName(),
+                        poQty, // Req Qty (can be same as PO Qty for simplicity in edit mode)
+                        poQty, // PO Qty
+                        CURRENCY_FORMAT.format(unitPrice),
+                        itemSupplierWrapper, // The item's specific supplier
+                        CURRENCY_FORMAT.format(item.getTotalPrice() / 100.0), // Use item's total price
+                        "N/A", // Suggested from PR not directly applicable here
+                        item.getItemId()
+                });
+            }
+        }
+    }
+
+
     private JTextField findTextFieldInPanel(JPanel containerPanel) {
+        if (containerPanel == null) return null;
         if (containerPanel.getLayout() instanceof BorderLayout) {
             Component centerComponent = ((BorderLayout) containerPanel.getLayout()).getLayoutComponent(BorderLayout.CENTER);
-            if (centerComponent instanceof JTextField) {
-                return (JTextField) centerComponent;
-            }
+            if (centerComponent instanceof JTextField) return (JTextField) centerComponent;
         }
         for (Component comp : containerPanel.getComponents()) {
             if (comp instanceof JTextField) return (JTextField) comp;
             if (comp instanceof JPanel) {
-                for (Component subComp : ((JPanel) comp).getComponents()) {
-                    if (subComp instanceof JTextField) return (JTextField) subComp;
+                // Basic recursive search, careful with complex nested panels
+                for(Component sub : ((JPanel) comp).getComponents()){
+                    if(sub instanceof JTextField) return (JTextField) sub;
                 }
             }
         }
-        System.err.println("AddItemForm Warning: JTextField not found in panel as expected. Review panel structure from BaseForm.createFormFieldPanel.");
+        System.err.println("AddPurchaseOrderForm Warning: JTextField not found in panel: " + containerPanel.getName());
         return null;
     }
 
@@ -191,36 +262,35 @@ public class AddPurchaseOrderForm extends BaseForm {
     protected JPanel createFormPanel() {
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setBackground(mediumBlue); //
+        formPanel.setBackground(mediumBlue);
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JPanel prIdPanel = createFormFieldPanel("Purchase Requisition ID:", ""); // From BaseForm
-        prIdFieldDisplay = findTextFieldInPanel(prIdPanel);       // Your local helper
-        prIdPanel.setAlignmentX(Component.LEFT_ALIGNMENT);      // Make the panel align left
+        JPanel prIdPanel = createFormFieldPanel("Associated PR ID (if any):", "N/A");
+        prIdFieldDisplay = findTextFieldInPanel(prIdPanel);
+        prIdPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         formPanel.add(prIdPanel);
 
-        // --- PO General Notes Section (Editable) ---
-        JPanel poNotesPanelContainer = createFormTextAreaPanel("Purchase Order Notes:", PO_GENERAL_NOTES_PLACEHOLDER, 3); // From BaseForm
-        poGeneralNotesArea = findTextAreaInPanel(poNotesPanelContainer); // Your local helper
-        poNotesPanelContainer.setAlignmentX(Component.LEFT_ALIGNMENT); // Make the panel align left
+        JPanel poNotesPanelContainer = createFormTextAreaPanel("Purchase Order Notes:", PO_GENERAL_NOTES_PLACEHOLDER, 3);
+        poGeneralNotesArea = findTextAreaInPanel(poNotesPanelContainer);
+        poNotesPanelContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
         formPanel.add(poNotesPanelContainer);
         formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        JLabel prInfoLabel = new JLabel("*Please select ONE supplier for each item below");
-        prInfoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        prInfoLabel.setForeground(UITheme.ERROR_RED); //
-        prInfoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(prInfoLabel);
+        JLabel itemsLabel = new JLabel("Purchase Order Items:");
+        itemsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        itemsLabel.setForeground(textWhite);
+        itemsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formPanel.add(itemsLabel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-
-        String[] poItemTableColumns = { /* ... as before ... */
+        String[] poItemTableColumns = {
                 "Item Code", "Name", "Req.Qty", "PO Qty", "Unit Price",
-                "Choose PO Supplier", "Total", "Suggested (PR)", "ItemEntryId"
+                "Choose Supplier", "Total", "Suggested (PR)", "ItemEntryId" // "Choose Supplier" replaces "Choose PO Supplier"
         };
         poItemsTableModel = new DefaultTableModel(poItemTableColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
+                // Allow editing PO Qty, Unit Price, and Chosen Supplier
                 return column == COL_PO_QTY || column == COL_UNIT_PRICE || column == COL_CHOSEN_SUPPLIER_PO;
             }
             @Override
@@ -230,17 +300,15 @@ public class AddPurchaseOrderForm extends BaseForm {
             }
         };
         poItemsTable = new JTable(poItemsTableModel);
-        setupPOItemsTable();
+        setupPOItemsTable(); // Includes setting column widths and TableModelListener
 
         JScrollPane itemsScrollPane = new JScrollPane(poItemsTable);
         itemsScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-        // Set a preferred height, and a maximum size that allows width to expand
-        itemsScrollPane.setPreferredSize(new Dimension(itemsScrollPane.getPreferredSize().width, 250)); // Keep preferred height
-        itemsScrollPane.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE)); // Allow to expand fully horizontally and vertically if needed
+        itemsScrollPane.setPreferredSize(new Dimension(itemsScrollPane.getPreferredSize().width, 250));
+        itemsScrollPane.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
 
         formPanel.add(itemsScrollPane);
         formPanel.add(Box.createRigidArea(new Dimension(0,10)));
-
         formPanel.add(Box.createVerticalGlue());
         return formPanel;
     }
@@ -248,20 +316,18 @@ public class AddPurchaseOrderForm extends BaseForm {
     private void setupPOItemsTable() {
         poItemsTable.setRowHeight(28);
         poItemsTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        // Corrected widths based on column purpose
         poItemsTable.getColumnModel().getColumn(COL_ITEM_CODE).setPreferredWidth(80);
-        poItemsTable.getColumnModel().getColumn(COL_ITEM_NAME).setPreferredWidth(180); // Adjusted
+        poItemsTable.getColumnModel().getColumn(COL_ITEM_NAME).setPreferredWidth(180);
         poItemsTable.getColumnModel().getColumn(COL_REQ_QTY).setPreferredWidth(60);
         poItemsTable.getColumnModel().getColumn(COL_PO_QTY).setPreferredWidth(60);
-        poItemsTable.getColumnModel().getColumn(COL_UNIT_PRICE).setPreferredWidth(80);
-        poItemsTable.getColumnModel().getColumn(COL_CHOSEN_SUPPLIER_PO).setPreferredWidth(220); // Wider for supplier name
-        poItemsTable.getColumnModel().getColumn(COL_TOTAL_PRICE).setPreferredWidth(90);
-        poItemsTable.getColumnModel().getColumn(COL_SUGGESTED_SUPPLIERS_PR).setPreferredWidth(150);
+        poItemsTable.getColumnModel().getColumn(COL_UNIT_PRICE).setPreferredWidth(90); // Adjusted for currency
+        poItemsTable.getColumnModel().getColumn(COL_CHOSEN_SUPPLIER_PO).setPreferredWidth(200); // For supplier selection
+        poItemsTable.getColumnModel().getColumn(COL_TOTAL_PRICE).setPreferredWidth(100); // Adjusted for currency
+        poItemsTable.getColumnModel().getColumn(COL_SUGGESTED_SUPPLIERS_PR).setPreferredWidth(150); // If displayed
 
         TableColumn hiddenColumn = poItemsTable.getColumnModel().getColumn(COL_ITEM_ENTRY_ID_HIDDEN);
         hiddenColumn.setMinWidth(0); hiddenColumn.setMaxWidth(0); hiddenColumn.setWidth(0);
-
-        // Cell editor for "Choose PO Supplier" is set in the constructor's invokeLater block
-        // after allSuppliersForComboBoxCache is populated.
 
         poItemsTableModel.addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE && e.getColumn() != TableModelEvent.ALL_COLUMNS) {
@@ -272,6 +338,7 @@ public class AddPurchaseOrderForm extends BaseForm {
                 }
             }
         });
+        // Cell editor for supplier selection is set up in constructor/invokeLater after cache is ready
     }
 
     class SupplierCellEditorForRow extends DefaultCellEditor {
@@ -281,59 +348,25 @@ public class AddPurchaseOrderForm extends BaseForm {
         public SupplierCellEditorForRow(List<SupplierDisplayWrapper> allSuppliers) {
             super(new JComboBox<>());
             this.comboBox = (JComboBox<SupplierDisplayWrapper>) getComponent();
-            this.allSuppliersForEditor = allSuppliers; // Use the pre-loaded cache
+            this.allSuppliersForEditor = allSuppliers;
             this.comboBox.setFont(new Font("Arial", Font.PLAIN, 11));
         }
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             comboBox.removeAllItems();
-
-            // Add the default "-- Choose Supplier --" option (should be first in allSuppliersForEditor)
             if (allSuppliersForEditor != null && !allSuppliersForEditor.isEmpty()) {
-                comboBox.addItem(allSuppliersForEditor.get(0));
-            } else { // Fallback if cache is somehow not ready (should not happen)
-                comboBox.addItem(new SupplierDisplayWrapper(null, "-- Choose Supplier --"));
-            }
-
-            String itemCodeForRow = (String) table.getValueAt(row, COL_ITEM_CODE);
-            List<String> suggestedSupplierIdsForRow = new ArrayList<>();
-            if (AddPurchaseOrderForm.this.sourcePR != null && AddPurchaseOrderForm.this.sourcePR.getItems() != null) {
-                for (PurchaseRequisitionItem prItem : AddPurchaseOrderForm.this.sourcePR.getItems()) {
-                    if (prItem.getItemCode().equals(itemCodeForRow) && prItem.getSuggestedSupplierIds() != null) {
-                        suggestedSupplierIdsForRow.addAll(prItem.getSuggestedSupplierIds());
-                        break;
-                    }
-                }
-            }
-
-            Set<String> addedToCombo = new HashSet<>();
-            // Add suggested suppliers first (if they are in the main cache)
-            if (!suggestedSupplierIdsForRow.isEmpty() && allSuppliersForEditor != null) {
-                for (SupplierDisplayWrapper sdw : allSuppliersForEditor) {
-                    if (sdw.getId() != null && suggestedSupplierIdsForRow.contains(sdw.getId())) {
-                        comboBox.addItem(sdw);
-                        addedToCombo.add(sdw.getId());
-                    }
-                }
-            }
-            // Add separator
-            if (!suggestedSupplierIdsForRow.isEmpty() && comboBox.getItemCount() > 1 && addedToCombo.size() < (allSuppliersForEditor.stream().filter(s -> s.getId() != null).count()) ) {
-                comboBox.addItem(new SupplierDisplayWrapper(null, "--- Other Suppliers ---"));
-            }
-            // Add other suppliers from cache
-            if (allSuppliersForEditor != null) {
-                for (SupplierDisplayWrapper sdw : allSuppliersForEditor) {
-                    if (sdw.getId() != null && !addedToCombo.contains(sdw.getId())) {
-                        comboBox.addItem(sdw);
-                    }
-                }
+                allSuppliersForEditor.forEach(comboBox::addItem); // Add all suppliers from cache
+            } else {
+                comboBox.addItem(new SupplierDisplayWrapper(null, "-- No Suppliers Available --"));
             }
 
             if (value instanceof SupplierDisplayWrapper) {
                 comboBox.setSelectedItem(value);
-            } else {
-                if (allSuppliersForEditor != null && !allSuppliersForEditor.isEmpty()) comboBox.setSelectedItem(allSuppliersForEditor.get(0));
+            } else { // Default to the first option (e.g., "-- Choose Supplier --")
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.setSelectedIndex(0);
+                }
             }
             return comboBox;
         }
@@ -346,153 +379,191 @@ public class AddPurchaseOrderForm extends BaseForm {
             Object unitPriceObj = poItemsTableModel.getValueAt(row, COL_UNIT_PRICE);
             String poQtyStr = (poQtyObj != null) ? poQtyObj.toString().trim() : "0";
             String unitPriceStr = (unitPriceObj != null) ? unitPriceObj.toString().replace(CURRENCY_FORMAT.getCurrency().getSymbol(), "").replace(",", "").trim() : "0.00";
+
             if (poQtyStr.isEmpty()) poQtyStr = "0";
-            if (unitPriceStr.isEmpty()) unitPriceStr = "0.00";
+            if (unitPriceStr.isEmpty() || unitPriceStr.equalsIgnoreCase("N/A")) unitPriceStr = "0.00";
+
             int poQty = Integer.parseInt(poQtyStr);
             double unitPrice = Double.parseDouble(unitPriceStr);
-            if (poQty < 0) { poQty = 0; final int finalPoQty = poQty; SwingUtilities.invokeLater(() -> poItemsTableModel.setValueAt(finalPoQty, row, COL_PO_QTY));}
+
+            if (poQty < 0) {
+                poQty = 0;
+                final int finalPoQty = poQty; // Need final variable for lambda
+                SwingUtilities.invokeLater(() -> poItemsTableModel.setValueAt(String.valueOf(finalPoQty), row, COL_PO_QTY));
+            }
             poItemsTableModel.setValueAt(CURRENCY_FORMAT.format(unitPrice * poQty), row, COL_TOTAL_PRICE);
-        } catch (NumberFormatException ex) { poItemsTableModel.setValueAt("Price Error", row, COL_TOTAL_PRICE); }
+        } catch (NumberFormatException ex) {
+            poItemsTableModel.setValueAt("Error", row, COL_TOTAL_PRICE);
+            System.err.println("Error updating total price for row " + row + ": " + ex.getMessage());
+        }
     }
 
     @Override
     protected void saveAction() {
         String generalPONotes = getTextAreaValue(poGeneralNotesArea, PO_GENERAL_NOTES_PLACEHOLDER);
         if (generalPONotes == null || generalPONotes.equals(PO_GENERAL_NOTES_PLACEHOLDER)) {
-            generalPONotes = ""; // Use PR notes if PO notes are empty/placeholder
+            generalPONotes = (sourcePR != null && !isEditMode) ? (sourcePR.getNotes() != null ? sourcePR.getNotes() : "") : (existingPOForEdit != null ? (existingPOForEdit.getNotes() != null ? existingPOForEdit.getNotes() : "") : "");
         }
 
 
-        Map<String, List<PurchaseOrderItem>> itemsGroupedBySupplier = new HashMap<>();
+        List<PurchaseOrderItem> collectedPOItems = new ArrayList<>();
+        boolean validationErrorOccurred = false;
+
         for (int i = 0; i < poItemsTableModel.getRowCount(); i++) {
             int poQty;
             try {
                 poQty = Integer.parseInt(poItemsTableModel.getValueAt(i, COL_PO_QTY).toString().trim());
             } catch (NumberFormatException | NullPointerException ex) {
-                showError("Row " + (i + 1) + ": PO Quantity must be a valid whole number."); return;
+                showError("Row " + (i + 1) + ": PO Quantity must be a valid whole number.");
+                validationErrorOccurred = true;
+                break;
             }
-
-            if (poQty <= 0) continue;
 
             Object supplierCellValue = poItemsTableModel.getValueAt(i, COL_CHOSEN_SUPPLIER_PO);
             if (!(supplierCellValue instanceof SupplierDisplayWrapper) || ((SupplierDisplayWrapper) supplierCellValue).getId() == null) {
                 showError("Row " + (i + 1) + ": Please choose a supplier for item '" + poItemsTableModel.getValueAt(i, COL_ITEM_NAME) + "'.");
-                return;
+                validationErrorOccurred = true;
+                break;
             }
             String chosenSupplierId = ((SupplierDisplayWrapper) supplierCellValue).getId();
 
-            try {
-                String itemEntryId = poItemsTableModel.getValueAt(i, COL_ITEM_ENTRY_ID_HIDDEN).toString();
-                String itemCode = poItemsTableModel.getValueAt(i, COL_ITEM_CODE).toString();
-                String itemName = poItemsTableModel.getValueAt(i, COL_ITEM_NAME).toString();
-                String unitPriceStr = poItemsTableModel.getValueAt(i, COL_UNIT_PRICE).toString()
-                        .replace(CURRENCY_FORMAT.getCurrency().getSymbol(), "").replace(",", "");
-                double unitPriceDouble = Double.parseDouble(unitPriceStr.trim());
-                int priceInCents = (int) Math.round(unitPriceDouble * 100);
-                if (priceInCents < 0) { showError("Row " + (i+1) + ": Unit price for '" + itemName + "' cannot be negative."); return; }
-
-                PurchaseOrderItem poItem = new PurchaseOrderItem(null, itemEntryId, itemCode, itemName, poQty, priceInCents);
-                itemsGroupedBySupplier.computeIfAbsent(chosenSupplierId, k -> new ArrayList<>()).add(poItem);
-            } catch (NumberFormatException ex) {
-                showError("Row " + (i+1) + ": Invalid Unit Price. It must be a valid number."); return;
-            } catch (Exception ex) {
-                showError("Error processing item at row " + (i+1) + ": " + ex.getMessage()); ex.printStackTrace(); return;
+            if (poQty <= 0) {
+                if (!isEditMode) { // For new POs, qty must be > 0
+                    showError("Row " + (i + 1) + ": PO Quantity must be positive for new Purchase Orders.");
+                    validationErrorOccurred = true;
+                    break;
+                }
+                // If editing and qty is 0, this item will be effectively removed/skipped.
+                continue;
             }
+
+            String itemEntryId = poItemsTableModel.getValueAt(i, COL_ITEM_ENTRY_ID_HIDDEN).toString();
+            String itemCode = poItemsTableModel.getValueAt(i, COL_ITEM_CODE).toString();
+            String itemName = poItemsTableModel.getValueAt(i, COL_ITEM_NAME).toString();
+            String unitPriceStr = poItemsTableModel.getValueAt(i, COL_UNIT_PRICE).toString()
+                    .replace(CURRENCY_FORMAT.getCurrency().getSymbol(), "").replace(",", "");
+            double unitPriceDouble;
+            try {
+                unitPriceDouble = Double.parseDouble(unitPriceStr.trim());
+                if (unitPriceDouble < 0) {
+                    showError("Row " + (i + 1) + ": Unit price for '" + itemName + "' cannot be negative.");
+                    validationErrorOccurred = true;
+                    break;
+                }
+            } catch (NumberFormatException ex) {
+                showError("Row " + (i + 1) + ": Invalid Unit Price for '" + itemName + "'.");
+                validationErrorOccurred = true;
+                break;
+            }
+            int priceInCents = (int) Math.round(unitPriceDouble * 100);
+
+            PurchaseOrderItem poItem = new PurchaseOrderItem(
+                    this.editModePoId, // Null for new PO, set by controller; actual ID for edit
+                    itemEntryId, itemCode, itemName, poQty, priceInCents, chosenSupplierId // Add supplierId here
+            );
+            collectedPOItems.add(poItem);
         }
 
-        if (itemsGroupedBySupplier.isEmpty()) {
-            showError("No items with quantity > 0 and a chosen supplier. Cannot create Purchase Order(s).");
+        if (validationErrorOccurred) return;
+
+        if (collectedPOItems.isEmpty() && poItemsTableModel.getRowCount() > 0 && isEditMode) {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "All items have zero quantity or were removed. This will result in a PO with no items (effectively cancelling/deleting it). Continue?",
+                    "Confirm Empty PO", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (confirm == JOptionPane.NO_OPTION || confirm == JOptionPane.CLOSED_OPTION) return;
+        } else if (collectedPOItems.isEmpty() && !isEditMode){
+            showError("Cannot create a Purchase Order with no items.");
             return;
         }
 
-        int poCreatedCount = 0; int poFailedCount = 0; StringBuilder errors = new StringBuilder();
-        String prIdForPO = (sourcePR != null) ? sourcePR.getPrId() : "N/A_DirectPO";
 
+        if (!isEditMode) { // ADD MODE (Creating a single PO with potentially multiple suppliers at item level)
+            String prIdForPO = (sourcePR != null) ? sourcePR.getPrId() : "DIRECT_PO"; // Use source PR or placeholder
 
-        for (Map.Entry<String, List<PurchaseOrderItem>> entry : itemsGroupedBySupplier.entrySet()) {
-            String supplierIdForPO = entry.getKey();
-            List<PurchaseOrderItem> poItemsListForSupplier = entry.getValue();
+            // Since a PO can now have items from different suppliers, we create ONE PO header.
+            // The items in collectedPOItems already have their individual supplier IDs.
             try {
-                // Ensure FileController paths are set before PO controller operations
-                new FileController("data/purchase_order.txt");
-                new FileController("data/purchase_order_item.txt");
+                // new FileController(purchaseOrderController.getPoHeaderFilePath()); // Path setting for controller if needed
+                // new FileController(purchaseOrderController.getPoItemsFilePath());
 
-                model.PurchaseOrder createdPO = purchaseOrderController.createPurchaseOrderFromPR(
-                        prIdForPO, generalPONotes, supplierIdForPO, poItemsListForSupplier);
+                // The controller's createPurchaseOrderFromPR method needs to be adapted:
+                // It should no longer take a header-level supplierId.
+                // It creates one PO and adds all items from collectedPOItems to it.
+                PurchaseOrder createdPO = purchaseOrderController.createPurchaseOrderFromPR(
+                        prIdForPO,
+                        generalPONotes,
+                        // supplierIdForPO, // REMOVE THIS PARAMETER FROM CONTROLLER METHOD
+                        collectedPOItems); // Pass the list of items, each with its supplierId
+
                 if (createdPO != null) {
-                    System.out.println("Successfully created PO " + createdPO.getPoId() + " for supplier " + supplierIdForPO);
-                    poCreatedCount++;
+                    showSuccess("Purchase Order " + createdPO.getPoId() + " created successfully!");
+                    // Refresh the appropriate parent view
+                    if (parentFrame instanceof PMPurchaseRequisitionView) {
+                        ((PMPurchaseRequisitionView) parentFrame).refreshTable();
+                    } else if (parentFrame instanceof PMPurchaseOrderView) {
+                        ((PMPurchaseOrderView) parentFrame).refreshTable();
+                    } else if (parentFrame instanceof PurchaseOrderView) { // General PO View
+                        ((PurchaseOrderView) parentFrame).refreshTable();
+                    }
+                    dispose();
                 } else {
-                    poFailedCount++; errors.append("PO creation returned null for supplier ").append(supplierIdForPO).append(".\n");
+                    showError("Failed to create Purchase Order.");
                 }
             } catch (Exception e) {
-                poFailedCount++; errors.append("Error creating PO for supplier ").append(supplierIdForPO).append(": ").append(e.getMessage()).append("\n");
+                showError("Error creating Purchase Order: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else { // EDIT MODE
+            if (existingPOForEdit == null) {
+                showError("Cannot save. Original Purchase Order data not loaded for editing.");
+                return;
+            }
+
+            PurchaseOrder poToUpdate = new PurchaseOrder(
+                    this.editModePoId,
+                    existingPOForEdit.getPrId(),
+                    generalPONotes,
+                    // existingPOForEdit.getSelectedSupplierId(), // REMOVE: PO Header no longer has supplierId
+                    existingPOForEdit.getStatus(),
+                    existingPOForEdit.getCreatedAt(),
+                    existingPOForEdit.getCreatedBy(),
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()),
+                    SessionController.getInstance().getUserId(),
+                    existingPOForEdit.getReceivedAt(),
+                    existingPOForEdit.getReceivedBy(),
+                    collectedPOItems
+            );
+
+            try {
+                // new FileController(purchaseOrderController.getPoHeaderFilePath());
+                // new FileController(purchaseOrderController.getPoItemsFilePath());
+                purchaseOrderController.update(poToUpdate);
+                showSuccess("Purchase Order " + this.editModePoId + " updated successfully!");
+                dispose();
+                if (parentFrame instanceof PMPurchaseOrderView) {
+                    ((PMPurchaseOrderView) parentFrame).refreshTable();
+                } else if (parentFrame instanceof PurchaseOrderView) {
+                    ((PurchaseOrderView) parentFrame).refreshTable();
+                }
+            } catch (Exception e) {
+                showError("Error updating Purchase Order " + this.editModePoId + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
-
-        StringBuilder summaryMessage = new StringBuilder();
-        if (poCreatedCount > 0) summaryMessage.append(poCreatedCount).append(" Purchase Order(s) created successfully!\n");
-        if (poFailedCount > 0) {
-            summaryMessage.append(poFailedCount).append(" Purchase Order(s) failed to create.\n");
-            if (errors.length() > 0) summaryMessage.append("Details:\n").append(errors.toString());
-            showError(summaryMessage.toString());
-        } else if (poCreatedCount > 0) {
-            showSuccess(summaryMessage.toString());
-        } else {
-            showError("No Purchase Orders were processed or created.");
-        }
-
-        if (poCreatedCount > 0) {
-            if (parentFrame instanceof PMPurchaseRequisitionView) {
-                ((PMPurchaseRequisitionView) parentFrame).refreshTable(); // Refresh the PR list
-            }
-            // TODO: Optionally refresh a main PurchaseOrderView if it exists and is accessible
-            dispose();
-        }
     }
 
-    // Helper to find JTextArea, using logic from BaseForm if available or adapted
     private JTextArea findTextAreaInPanel(JPanel containerPanel) {
-        // User's BaseForm.createFormTextAreaPanel wraps JTextArea in a JScrollPane
-        // which is then added to BorderLayout.CENTER of the containerPanel.
+        if (containerPanel == null) return null;
         if (containerPanel.getLayout() instanceof BorderLayout) {
             Component centerComponent = ((BorderLayout)containerPanel.getLayout()).getLayoutComponent(BorderLayout.CENTER);
             if (centerComponent instanceof JScrollPane) {
                 Component view = ((JScrollPane) centerComponent).getViewport().getView();
                 if (view instanceof JTextArea) return (JTextArea) view;
+            } else if (centerComponent instanceof JTextArea) { // Should not happen with BaseForm structure
+                return (JTextArea) centerComponent;
             }
         }
-        System.err.println("AddPurchaseOrderForm Warning: JTextArea not found using expected structure for panel named: " + containerPanel.getName());
-        // Fallback scan if needed, but BaseForm structure should be primary target
-        for (Component comp : containerPanel.getComponents()) { // Check immediate children
-            if (comp instanceof JScrollPane) { Component view = ((JScrollPane) comp).getViewport().getView(); if (view instanceof JTextArea) return (JTextArea) view; }
-            if (comp instanceof JTextArea) return (JTextArea) comp;
-        }
-        return null;
-    }
-
-    // Placeholder for setPlaceholder logic if not in BaseForm
-    protected void setPlaceholder(JTextArea textArea, String placeholder) {
-        if (textArea.getText().isEmpty()) {
-            textArea.setText(placeholder);
-            textArea.setForeground(Color.GRAY);
-        }
-        textArea.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (textArea.getForeground() == Color.GRAY && textArea.getText().equals(placeholder)) {
-                    textArea.setText("");
-                    textArea.setForeground(textWhite); // Or your default text color
-                }
-            }
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (textArea.getText().isEmpty()) {
-                    textArea.setForeground(Color.GRAY);
-                    textArea.setText(placeholder);
-                }
-            }
-        });
+        System.err.println("AddPurchaseOrderForm Warning: JTextArea not found as expected in panel: " + containerPanel.getName());
+        return null; // Fallback
     }
 }

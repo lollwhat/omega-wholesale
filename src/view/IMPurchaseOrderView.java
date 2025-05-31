@@ -35,7 +35,7 @@ public class IMPurchaseOrderView extends JFrame {
     private SupplierController supplierController;
 
     private final String[] poColumnNames = {
-            "PO ID", "PR ID", "Notes", "Supplier", "Status",
+            "PO ID", "PR ID", "Notes", "Status",
             "Created At", "Created By", "Updated At", "Updated By",
             "Received At", "Received By", "Actions"
     };
@@ -50,7 +50,7 @@ public class IMPurchaseOrderView extends JFrame {
 
         poController = new PurchaseOrderController();
         supplierController = new SupplierController();
-        poRowMapper = new PurchaseOrderRowMapper(supplierController);
+        poRowMapper = new PurchaseOrderRowMapper();
 
         add(createPurchaseOrderPanel());
 
@@ -89,18 +89,12 @@ public class IMPurchaseOrderView extends JFrame {
         return mainPanel;
     }
 
-    // private void showCreatePOForm(String prId) { ... } // Unchanged
-    // private void showEditPurchaseOrderForm(String poIdToEdit){ ... } // Unchanged
-
-
     public void refreshTable() {
         SwingUtilities.invokeLater(() -> {
             if (poTableModel == null || poController == null || poRowMapper == null) {
                 System.err.println("PurchaseOrderView.refreshTable(): Components not initialized.");
                 if (poController == null) poController = new PurchaseOrderController();
                 if (supplierController == null) supplierController = new SupplierController();
-                if (poRowMapper == null) poRowMapper = new PurchaseOrderRowMapper(supplierController);
-
                 if (poTableModel == null && poTable != null && poTable.getModel() instanceof DefaultTableModel) {
                     poTableModel = (DefaultTableModel) poTable.getModel();
                 } else if (poTableModel == null) {
@@ -130,7 +124,6 @@ public class IMPurchaseOrderView extends JFrame {
 
     private JScrollPane createPOTable() {
         if (this.supplierController == null) this.supplierController = new SupplierController();
-        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController);
 
         List<String> initialEmptyData = new ArrayList<>(); // Table starts empty
         this.poTableModel = GenericModelHelper.createGenericTableModel(
@@ -156,7 +149,6 @@ public class IMPurchaseOrderView extends JFrame {
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(80);  // PO ID
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(80);  // PR ID
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(200); // Notes
-        poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(180); // Supplier
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Status
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(150); // Created At
         poTable.getColumnModel().getColumn(colIndex++).setPreferredWidth(100); // Created By
@@ -232,7 +224,7 @@ public class IMPurchaseOrderView extends JFrame {
                 // 'currentRow' is set by getTableCellEditorComponent
                 if (currentRow >= 0 && currentRow < this.containingTable.getRowCount()) {
                     String poId = (String) this.containingTable.getValueAt(currentRow, 0);
-                    Object statusValue = this.containingTable.getValueAt(currentRow, 4); // Status column index
+                    Object statusValue = this.containingTable.getValueAt(currentRow, 3); // Status column index
                     // Default to first option if current status is null, or use actual status
                     String currentStatusStr = (statusValue != null) ? statusValue.toString() : PO_STATUS_DIALOG_OPTIONS[0];
 
@@ -248,8 +240,8 @@ public class IMPurchaseOrderView extends JFrame {
         private void refreshButtonEnabledState(JTable tableContext, int row) {
             boolean enableButton = false;
             if (row >= 0 && row < tableContext.getRowCount()) {
-                // Status is at column index 4 ("Status")
-                Object statusCell = tableContext.getValueAt(row, 4);
+                // Status is at column index 3 ("Status")
+                Object statusCell = tableContext.getValueAt(row, 3);
                 String currentStatus = (statusCell != null) ? statusCell.toString() : "";
 
                 if (APPROVED_STATUS_STRING.equalsIgnoreCase(currentStatus)) {
@@ -328,20 +320,12 @@ public class IMPurchaseOrderView extends JFrame {
             }
 
             if (newStatusInt != -1) {
-                // Ensure poController and stockController are initialized (e.g., class members or new instances)
-                // PurchaseOrderController poController = new PurchaseOrderController(); // If not already a class member
-                // StockController stockController = new StockController(); // If not already a class member
-
                 boolean operationSuccess = false;
                 String successMessage = "";
                 String errorMessage = "";
 
                 try {
                     if (newStatusInt == 2) { // If new status is "Received"
-                        // StockController.markPurchaseOrderAsReceived handles:
-                        // 1. Checking if PO is "Approved"
-                        // 2. Updating PO status to "Received" in purchase_order.txt
-                        // 3. Reading PO items and updating stock_details.txt
                         operationSuccess = stockController.markPurchaseOrderAsReceived(poId);
                         if (operationSuccess) {
                             successMessage = "PO " + poId + " marked as received and stock updated successfully.";
@@ -365,7 +349,6 @@ public class IMPurchaseOrderView extends JFrame {
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(parentDialogFrame, "Error during PO status update: " + ex.getMessage(), "Operation Error", JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace(); // For debugging
                 } finally {
                     refreshTable(); // Refresh table to show the updated status or reflect failed attempts
                 }
@@ -376,8 +359,9 @@ public class IMPurchaseOrderView extends JFrame {
 
     private void showPurchaseOrderDetailsPopup(String poId) {
         JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        // this.poController = new PurchaseOrderController(); // Re-instantiating might be problematic
+        // poController is an instance variable, no need to re-initialize
         PurchaseOrder po = poController.getFullPurchaseOrderById(poId);
+
         if (po == null) {
             JOptionPane.showMessageDialog(parentDialogFrame, "Could not retrieve details for PO ID: " + poId, "Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -403,22 +387,8 @@ public class IMPurchaseOrderView extends JFrame {
         addDetailRow(headerDetailsPanel, "PO ID:", po.getPoId());
         addDetailRow(headerDetailsPanel, "PR ID:", po.getPrId());
         addDetailRow(headerDetailsPanel, "Notes:", po.getNotes());
-
-        String supplierDisplay = "N/A";
-        if (po.getSupplierId() != null && !po.getSupplierId().isEmpty()) {
-            // if (supplierController == null) supplierController = new SupplierController(); else this.supplierController = new SupplierController();
-            // Re-instantiating controller here might not be ideal, ensure it's the correct instance
-            String supData = supplierController.getOneWithId(po.getSupplierId());
-            if (supData != null) {
-                String[] supParts = supData.split(",");
-                supplierDisplay = supParts[0] + (supParts.length > 1 ? " - " + supParts[1] : "");
-            } else {
-                supplierDisplay = po.getSupplierId() + " (Details not found)";
-            }
-        }
-        addDetailRow(headerDetailsPanel, "Supplier:", supplierDisplay);
-        // if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController);
-        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus())); // getStatusString needs int
+        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper();
+        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus()));
         addDetailRow(headerDetailsPanel, "Created At:", po.getCreatedAt());
         addDetailRow(headerDetailsPanel, "Created By:", po.getCreatedBy());
         addDetailRow(headerDetailsPanel, "Updated At:", po.getUpdatedAt());
@@ -437,15 +407,33 @@ public class IMPurchaseOrderView extends JFrame {
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
                 new Font("Arial", Font.BOLD, 14), textWhite));
 
-        String[] itemTableColumns = {"Item ID", "Item Code", "Item Name", "Qty", "Unit Price", "Total Price"};
-        DefaultTableModel itemsDetailTableModel = new DefaultTableModel(itemTableColumns, 0);
+        // Add "Supplier" column to items table in popup
+        String[] itemTableColumns = {"Item ID", "Item Code", "Item Name", "Supplier", "Qty", "Unit Price (ea.)", "Total Price"};
+        DefaultTableModel itemsDetailTableModel = new DefaultTableModel(itemTableColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+
         if (po.getItems() != null) {
             for (PurchaseOrderItem item : po.getItems()) {
-                double displayPrice = item.getPrice(); // Assuming getPrice returns double
-                double displayTotalPrice = item.getTotalPrice(); // Assuming getTotalPrice returns double
+                String itemSupplierDisplay = "N/A";
+                if (item.getSelectedSupplierId() != null && !item.getSelectedSupplierId().isEmpty()) {
+                    if (supplierController == null) supplierController = new SupplierController();
+                    String supData = supplierController.getOneWithId(item.getSelectedSupplierId());
+                    if (supData != null) {
+                        String[] supParts = supData.split(",");
+                        itemSupplierDisplay = supParts[0] + (supParts.length > 1 ? (" - " + supParts[1]) : "");
+                    } else {
+                        itemSupplierDisplay = item.getSelectedSupplierId() + " (Details N/A)";
+                    }
+                }
+
+                double displayPrice = item.getPrice() / 100.0; // Assuming price is in cents
+                double displayTotalPrice = item.getTotalPrice() / 100.0; // Assuming total is in cents
 
                 itemsDetailTableModel.addRow(new Object[]{
                         item.getItemId(), item.getItemCode(), item.getItemName(),
+                        itemSupplierDisplay, // Display item's supplier
                         item.getQuantity(),
                         CURRENCY_FORMAT.format(displayPrice),
                         CURRENCY_FORMAT.format(displayTotalPrice)
@@ -455,8 +443,10 @@ public class IMPurchaseOrderView extends JFrame {
         JTable itemsDetailTable = new JTable(itemsDetailTableModel);
         itemsDetailTable.setFont(new Font("Arial", Font.PLAIN, 12));
         itemsDetailTable.setRowHeight(25);
+        itemsDetailTable.getColumnModel().getColumn(3).setPreferredWidth(180); // Supplier column width
+
         JScrollPane itemsScrollPane = new JScrollPane(itemsDetailTable);
-        itemsScrollPane.setPreferredSize(new Dimension(550, 150));
+        itemsScrollPane.setPreferredSize(new Dimension(650, 150));
         itemsPanel.add(itemsScrollPane, BorderLayout.CENTER);
 
         mainDetailPanel.add(itemsPanel);
@@ -465,7 +455,13 @@ public class IMPurchaseOrderView extends JFrame {
         detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
         detailScrollPane.getViewport().setBackground(mediumBlue);
 
-        JButton closeButton = createActionButton("Close", _ -> detailDialog.dispose());
+        JButton closeButton = new JButton("Close");
+        closeButton.setFont(new Font("Arial", Font.BOLD, 12));
+        closeButton.setForeground(textWhite);
+        closeButton.setBackground(lightBlue);
+        closeButton.setFocusPainted(false);
+        closeButton.addActionListener(_ -> detailDialog.dispose());
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(mediumBlue);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
@@ -474,7 +470,7 @@ public class IMPurchaseOrderView extends JFrame {
         detailDialog.add(detailScrollPane, BorderLayout.CENTER);
         detailDialog.add(buttonPanel, BorderLayout.SOUTH);
 
-        detailDialog.setMinimumSize(new Dimension(600, 550));
+        detailDialog.setMinimumSize(new Dimension(700, 600));
         detailDialog.pack();
         detailDialog.setLocationRelativeTo(parentDialogFrame);
         detailDialog.setVisible(true);

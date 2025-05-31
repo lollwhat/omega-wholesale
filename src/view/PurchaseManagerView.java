@@ -23,8 +23,8 @@ public class PurchaseManagerView extends DashboardView {
             case "PR Overview & Create Purchase Order":
                 PMPurchaseRequisitionView pmPurchaseRequisitionView = new PMPurchaseRequisitionView();
                 return pmPurchaseRequisitionView.createPMPurchaseRequisitionPanel();
-            case "List of Purchase Orders":
-                PurchaseOrderView purchaseOrderView = new PurchaseOrderView();
+            case "Purchase Order Management":
+                PMPurchaseOrderView purchaseOrderView = new PMPurchaseOrderView();
                 return purchaseOrderView.createPurchaseOrderPanel();
             default:
                 return createDashboardContentPanel(quickOptions);

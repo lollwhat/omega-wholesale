@@ -7,9 +7,10 @@ public class PurchaseOrderItem {
     private String itemName;
     private int quantity;
     private int price;
-    private int totalPrice; // auto-calculated: quantity * price
+    private int totalPrice;
+    private String selectedSupplierId;
 
-    public PurchaseOrderItem(String poId, String itemId, String itemCode, String itemName, int quantity, int price) {
+    public PurchaseOrderItem(String poId, String itemId, String itemCode, String itemName, int quantity, int price, String selectedSupplierId) {
         this.poId = poId;
         this.itemId = itemId;
         this.itemCode = itemCode;
@@ -17,9 +18,10 @@ public class PurchaseOrderItem {
         this.quantity = quantity;
         this.price = price;
         this.totalPrice = quantity * price;
+        this.selectedSupplierId = selectedSupplierId;
     }
 
-    public PurchaseOrderItem(String poId, String itemId, String itemCode, String itemName, int quantity, int price, int totalPrice) {
+    public PurchaseOrderItem(String poId, String itemId, String itemCode, String itemName, int quantity, int price, int totalPrice, String selectedSupplierId) {
         this.poId = poId;
         this.itemId = itemId;
         this.itemCode = itemCode;
@@ -27,6 +29,7 @@ public class PurchaseOrderItem {
         this.quantity = quantity;
         this.price = price;
         this.totalPrice = totalPrice;
+        this.selectedSupplierId = selectedSupplierId;
     }
 
     public String getPoId() { return poId; }
@@ -54,6 +57,10 @@ public class PurchaseOrderItem {
     }
 
     public int getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(int totalPrice) { this.totalPrice = totalPrice; }
+
+    public String getSelectedSupplierId() { return selectedSupplierId; }
+    public void setSelectedSupplierId(String selectedSupplierId) { this.selectedSupplierId = selectedSupplierId; }
 
 
     public String toCSV() {
@@ -65,7 +72,8 @@ public class PurchaseOrderItem {
                 itemName != null ? itemName.replace(",", ";") : "",
                 String.valueOf(quantity),
                 String.valueOf(price),
-                String.valueOf(totalPrice)
+                String.valueOf(totalPrice),
+                selectedSupplierId != null ? selectedSupplierId.replace(",", ";") : ""
         );
     }
 
@@ -84,7 +92,8 @@ public class PurchaseOrderItem {
                     parts[3].replace(";", ","), // itemName
                     Integer.parseInt(parts[4]), // quantity
                     Integer.parseInt(parts[5]), // price
-                    Integer.parseInt(parts[6])  // totalPrice
+                    Integer.parseInt(parts[6]), // totalPrice
+                    parts[7].replace(";", ",")
             );
         } catch (NumberFormatException e) {
             System.err.println("Error parsing PurchaseOrderItem from CSV: " + csvLine + " - " + e.getMessage());
@@ -101,6 +110,7 @@ public class PurchaseOrderItem {
                 "\"quantity\": " + quantity + "," +
                 "\"price\": " + price + "," +
                 "\"totalPrice\": " + totalPrice +
+                ",\"selectedSupplierId\": \"" + selectedSupplierId + "\"" +
                 "}";
     }
 }

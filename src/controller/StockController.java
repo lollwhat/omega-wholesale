@@ -193,16 +193,16 @@ public class StockController extends CRUDController<Stock> {
                 if (poDetails[0].equals(poId)) {
                     poFound = true;
 
-                    if (!"1".equals(poDetails[4].trim())) { // check if PO is not "Approved"
+                    if (!"1".equals(poDetails[3].trim())) { // check if PO is not "Approved"
                         System.out.println("Purchase order ID " + poId + " is not in 'Approved' state and cannot be received.");
                         return false;
                     }
 
-                    poDetails[4] = "2";
-                    poDetails[7] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                    poDetails[8] = SessionController.getInstance().getUserId();
-                    poDetails[9] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                    poDetails[10] = SessionController.getInstance().getUserId();
+                    poDetails[3] = "2";
+                    poDetails[6] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                    poDetails[7] = SessionController.getInstance().getUserId();
+                    poDetails[8] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                    poDetails[9] = SessionController.getInstance().getUserId();
                     poLines.set(i, String.join(",", poDetails));
                     break;
                 }
@@ -252,39 +252,9 @@ public class StockController extends CRUDController<Stock> {
                             break;
                         }
                     }
-
-                    // If the item was not found in existing stock_details.txt to update,
-                    // the current logic for 'newStockEntry' might need review as well,
-                    // especially regarding default values and ensuring itemCode is used consistently.
-                    // The provided code always adds a new entry regardless of itemStockUpdated, which might be unintentional.
-                    // if (!itemStockUpdated) { // Logic to add new stock if not found
-                    //     System.out.println("Item " + itemCodeFromPO + " not found in stock, adding as new entry.");
-                    //     // Ensure the format matches Stock.java (id, itemCode, name, currentStock, minStock, maxStock, status, lastUpdateDate)
-                    //     // poItemDetails[3] is itemName
-                    //     String newStockEntry = String.format(
-                    //             "ST%03d,%s,%s,%d,%d,%d,%s,%s", // Assuming STxxx is the ID format
-                    //             updatedStockLines.size() + stockLines.size() +1, // This ID generation might need to be more robust
-                    //             itemCodeFromPO, // itemCode
-                    //             poItemDetails[3], // itemName
-                    //             quantityToAdd, // currentStock
-                    //             0, // Default minStock
-                    //             100, // Default maxStock (example)
-                    //             "In Stock", // Default status
-                    //             new SimpleDateFormat("yyyy-MM-dd").format(new Date()) // lastUpdateDate
-                    //     );
-                    //     updatedStockLines.add(newStockEntry);
-                    // }
-                    // The current code for newStockEntry is outside the if(poItemDetails[0].equals(poId)) block in the provided snippet,
-                    // and has 'itemName' where 'itemCode' might be expected for the second field if it follows Stock.java strictly.
-                    // The provided code has:
-                    // String newStockEntry = String.format(
-                    // "ST%03d,%s,%d,DEFAULT_UNIT,DEFAULT_REORDER_LVL,DEFAULT_REORDER_QTY,In Stock,%s", ... itemName, quantityToAdd ...
-                    // This format doesn't match the Stock object structure (needs itemCode, name, current, min, max, status, date).
-                    // This part needs careful review to ensure new stock entries are correct.
                 }
             }
 
-            // write back updated data to files
             Files.write(Paths.get("data/purchase_order.txt"), poLines);
             Files.write(Paths.get("data/stock_details.txt"), updatedStockLines);
 
@@ -356,14 +326,12 @@ public class StockController extends CRUDController<Stock> {
             throw new IOException("Stock file not found.");
         }
 
-        // read the stock data
         StringBuilder reportContent = new StringBuilder();
         reportContent.append("Stock ID,Item Code, Item Name,Current Stock,Min Stock,Max Stock,Status,Date\n");
         for (String line : Files.readAllLines(stockFilePath)) {
             reportContent.append(line).append("\n");
         }
 
-        // save the report to the specified path
         try (FileWriter writer = new FileWriter(savePath)) {
             writer.write(reportContent.toString());
         }

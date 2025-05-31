@@ -45,6 +45,9 @@ public class AdminView extends DashboardView {
 //            case "List of Purchase Orders": // Sales Manager; Purchase Manager
 //                PurchaseOrderView purchaseOrdersView = new PurchaseOrderView();
 //                return purchaseOrdersView.createPurchaseOrderPanel();
+            case "Purchase Order Management": // Purchase Manager
+                PMPurchaseOrderView pmPurchaseOrderView = new PMPurchaseOrderView();
+                return pmPurchaseOrderView.createPurchaseOrderPanel();
             case "Receive Purchase Order": // Inventory Manager
                 IMPurchaseOrderView purchaseOrderView = new IMPurchaseOrderView();
                 return purchaseOrderView.createPurchaseOrderPanel();

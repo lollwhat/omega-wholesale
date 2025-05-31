@@ -24,18 +24,7 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
         return PR_HEADER_FILE_PATH;
     }
 
-
-    // appendLineToFile and overwriteFileWithLines seem to use FileWriter directly,
-    // which is independent of the FileController static path issue, so they should be okay.
-    // Ensure these methods correctly handle file creation if not exists and newlines.
     private void appendLineToFile(String filePath, String data) throws IOException {
-        // Ensure FileController path is set if any static FileController methods are used INTERNALLY by this,
-        // OR ensure this method is fully self-contained. Current implementation uses FileWriter directly.
-        // For robustness with static FileController, one might consider:
-        // FileController localFC = new FileController(filePath); // Sets static path if constructor does
-        // localFC.appendLine(data); // If appendLine becomes non-static and safe
-
-        // Original direct FileWriter logic (generally fine for specific file operations):
         boolean needsNewLine = false;
         File file = new File(filePath);
         if (!file.exists()) {
@@ -62,24 +51,15 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
     }
 
     private void overwriteFileWithLines(String filePath, List<String> lines) throws IOException {
-        // Similar to appendLineToFile, ensure no problematic static FileController calls if any were added.
-        // Original direct FileWriter logic (generally fine):
-        try (FileWriter fw = new FileWriter(filePath, false)) { // false to overwrite
+        try (FileWriter fw = new FileWriter(filePath, false)) {
             for (int i = 0; i < lines.size(); i++) {
                 fw.write(lines.get(i));
-                if (i < lines.size() -1 ) { // Only add newline if it's not the last line
+                if (i < lines.size() -1 ) {
                     fw.write(System.lineSeparator());
                 } else if (!lines.get(i).endsWith(System.lineSeparator()) && !lines.get(i).isEmpty()){
-                    // Ensure last line has a newline if it's not empty and doesn't have one
-                    // This behavior might need adjustment based on how readAllLines handles last empty lines.
-                    // For now, let's stick to adding newlines between lines.
-                    // A common practice is for each line written (including the last) to end with a newline.
-                    // The appendLineToFile method already does this.
-                    // Let's adjust this to ensure all non-empty lines end with a newline.
                 }
             }
         }
-        // Let's refine overwriteFileWithLines for consistent newline handling:
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, false))) {
             for (String line : lines) {
                 bw.write(line);
@@ -113,61 +93,51 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
         }
 
         try {
-            // 1. PR Header - Uses this.filePath (PR_HEADER_FILE_PATH)
-            // The toCSV() in PurchaseRequisition model is already updated (no supplierId)
-            new FileController(this.filePath); // Ensure correct static path for super.fileController operations
+            // 1. PR Header
+            new FileController(this.filePath);
             String headerData = purchaseRequisition.toCSV();
-            // super.fileController.appendLine(headerData); // If using CRUDController's file ops
-            appendLineToFile(this.filePath, headerData); // Or using local direct write
+            appendLineToFile(this.filePath, headerData);
             System.out.println("PR Header added: " + purchaseRequisition.getPrId());
 
-            // 2. PR Items - Uses PR_ITEMS_FILE_PATH
-            // The toCSV() in PurchaseRequisitionItem model is updated (includes suggestedSupplierIds)
+            // 2. PR Items
             if (purchaseRequisition.getItems() != null) {
                 for (PurchaseRequisitionItem item : purchaseRequisition.getItems()) {
                     if (item == null) continue;
-                    item.setPrId(purchaseRequisition.getPrId()); // Ensure PR ID is set
+                    item.setPrId(purchaseRequisition.getPrId());
                     appendLineToFile(PR_ITEMS_FILE_PATH, item.toCSV());
                 }
                 System.out.println(purchaseRequisition.getItems().size() + " item(s) added for PR: " + purchaseRequisition.getPrId());
             }
-        } catch (IOException e) { // Changed from Exception to IOException
+        } catch (IOException e) {
             System.err.println("Error adding purchase requisition (ID: " + purchaseRequisition.getPrId() + ") to file: " + e.getMessage());
-            e.printStackTrace(); // Good for debugging
-            // Consider re-throwing as a custom runtime exception or handling more gracefully
+            e.printStackTrace();
         }
     }
 
-    // supplierId parameter removed from signature
     public PurchaseRequisition createNewPurchaseRequisition(String notes, int status,
                                                             List<PurchaseRequisitionItem> itemsData) {
         String prId;
         try {
-            // getAll() from CRUDController now handles its own static path setting
-            List<String> allPrHeaders = getAll(); // Reads PR_HEADER_FILE_PATH
+            List<String> allPrHeaders = getAll();
             int nextIdNumber = getNextIdNumber(allPrHeaders);
             prId = "PR" + String.format("%03d", nextIdNumber);
-        } catch (Exception e) { // Catch general exception from getAll or getNextIdNumber
+        } catch (Exception e) {
             System.err.println("Error generating PR ID: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Could not generate PR ID", e); // Or return null
         }
 
         String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         String createdBy = SessionController.getInstance().getUserId();
-        if (createdBy == null) createdBy = "system"; // Fallback
+        if (createdBy == null) createdBy = "system";
 
-        // Create PurchaseRequisition without supplierId
         PurchaseRequisition newPR = new PurchaseRequisition(
                 prId, notes, status,
-                createdAt, createdBy, createdAt, createdBy // Assuming updatedAt/By are same initially
+                createdAt, createdBy, createdAt, createdBy
         );
 
         if (itemsData != null) {
             for (PurchaseRequisitionItem itemDto : itemsData) {
                 if (itemDto == null) continue;
-                // The itemDto from AddPurchaseRequisitionForm should already have its suggestedSupplierIds set.
-                // We just need to ensure its PR ID is linked when adding to the PR object.
                 newPR.addItem(new PurchaseRequisitionItem(
                         null, // PR ID will be set by newPR.addItem()
                         itemDto.getItemId(),
