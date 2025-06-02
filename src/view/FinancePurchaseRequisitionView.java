@@ -136,7 +136,6 @@ public class FinancePurchaseRequisitionView extends JFrame {
                 Object[] rowData = {
                         requisition.getPrId(),
                         requisition.getNotes(),
-                        requisition.getSupplierId(),
                         requisition.getStatus(),
                         requisition.getCreatedAt(),
                         requisition.getCreatedBy(),
@@ -158,7 +157,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
         PurchaseRequisition purchaseRequisition = fmController.getFullPurchaseRequisitionDetailsById(prId);
 
         if (purchaseRequisition == null) {
-            JOptionPane.showMessageDialog(this, "Purchase Order not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Purchase Requisition not found.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -175,13 +174,12 @@ public class FinancePurchaseRequisitionView extends JFrame {
         JPanel headerPanel = new JPanel(new GridLayout(0, 2, 8, 8));
         headerPanel.setBackground(panelColour);
         headerPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(lightBlue), "Purchase Order Header",
+                BorderFactory.createLineBorder(lightBlue), "Purchase Requisition Header",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 new Font("Arial", Font.BOLD, 16), textColour));
 
         addDetailRow(headerPanel, "PR ID:", purchaseRequisition.getPrId());
-        addDetailRow(headerPanel, "Supplier ID:", purchaseRequisition.getSupplierId());
         addDetailRow(headerPanel, "Status:", String.valueOf(purchaseRequisition.getStatus()));
         addDetailRow(headerPanel, "Notes:", purchaseRequisition.getNotes());
         addDetailRow(headerPanel, "Created At:", purchaseRequisition.getCreatedAt());
@@ -197,7 +195,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
         JPanel itemsPanel = new JPanel(new BorderLayout());
         itemsPanel.setBackground(panelColour);
         itemsPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(lightBlue), "Purchase Order Items",
+                BorderFactory.createLineBorder(lightBlue), "Purchase Requisition Items",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 new Font("Arial", Font.BOLD, 14), textColour));

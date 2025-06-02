@@ -147,7 +147,6 @@ public class FinancePurchaseOrderView extends JFrame {
                         purchaseOrder.getPoId(),
                         purchaseOrder.getPrId(),
                         purchaseOrder.getNotes(),
-                        purchaseOrder.getSupplierId(),
                         purchaseOrder.getStatus(),
                         purchaseOrder.getCreatedAt(),
                         purchaseOrder.getCreatedBy(),
@@ -193,7 +192,6 @@ public class FinancePurchaseOrderView extends JFrame {
 
         addDetailRow(headerPanel, "PO ID:", purchaseOrder.getPoId());
         addDetailRow(headerPanel, "PR ID:", purchaseOrder.getPrId());
-        addDetailRow(headerPanel, "Supplier ID:", purchaseOrder.getSupplierId());
         addDetailRow(headerPanel, "Status:", String.valueOf(purchaseOrder.getStatus()));
         addDetailRow(headerPanel, "Notes:", purchaseOrder.getNotes());
         addDetailRow(headerPanel, "Created At:", purchaseOrder.getCreatedAt());

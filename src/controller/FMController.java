@@ -1,7 +1,5 @@
 package controller;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import model.PurchaseOrder;
@@ -57,7 +55,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
         List<PurchaseOrder> poHeader = new ArrayList<>();
 
         try{
-            List<String> lines = Files.readAllLines(Paths.get(super.filePath));
+            new FileController(super.filePath);
+            List<String> lines = FileController.getFile();
             if(lines != null) {
                 for (String line : lines) {
                     PurchaseOrder purchaseOrder = PurchaseOrder.fromCSV(line);
@@ -66,7 +65,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase order header file: " + super.filePath + " " + e.getMessage());
         }
 
@@ -77,7 +76,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
         PurchaseOrder poHeader = null;
 
         try {
-            List<String> lines = Files.readAllLines(Paths.get(super.filePath));
+            new FileController(super.filePath);
+            List<String> lines = FileController.getFile();
             for (String line : lines) {
                 String[] parts = line.split(",", 2);
                 if (parts.length > 0 && parts[0].equals(poId)) {
@@ -85,7 +85,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     break;
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase order details: " + super.filePath + " " + e.getMessage());
         }
 
@@ -96,7 +96,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
         List<PurchaseOrderItem> poItems = new ArrayList<>();
         try {
-            List<String> itemLines = Files.readAllLines(Paths.get(PO_ITEMS_FILE_PATH));
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
             for (String itemLine : itemLines) {
                 String[] itemParts = itemLine.split(",", 2);
                 if (itemParts.length > 0 && itemParts[0].equals(poId)) {
@@ -106,7 +107,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase order items: " + PO_ITEMS_FILE_PATH + " " + e.getMessage());
         }
         poHeader.setItems(poItems);
@@ -119,7 +120,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
         List<PurchaseRequisition> prHeader = new ArrayList<>();
 
         try {
-            List<String> lines = Files.readAllLines(Paths.get(PR_HEADER_FILE_PATH));
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> lines = FileController.getFile();
             if (lines != null) {
                 for (String line : lines) {
                     PurchaseRequisition purchaseRequisition = PurchaseRequisition.fromHeaderCSV(line);
@@ -128,7 +130,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase requisition header file: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
         }
 
@@ -139,7 +141,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
         PurchaseRequisition prHeader = null;
 
         try {
-            List<String> lines = Files.readAllLines(Paths.get(PR_HEADER_FILE_PATH));
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> lines = FileController.getFile();
             for (String line : lines) {
                 String[] parts = line.split(",", 2);
                 if (parts.length > 0 && parts[0].equals(prId)) {
@@ -147,7 +150,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     break;
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase requisition details: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
         }
 
@@ -158,7 +161,8 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
         List<PurchaseRequisitionItem> prItems = new ArrayList<>();
         try {
-            List<String> itemLines = Files.readAllLines(Paths.get(PR_ITEMS_FILE_PATH));
+            new FileController(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
             for (String itemLine : itemLines) {
                 String[] itemParts = itemLine.split(",", 2);
                 if (itemParts.length > 0 && itemParts[0].equals(prId)) {
@@ -168,7 +172,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase requisition items: " + PR_ITEMS_FILE_PATH + " " + e.getMessage());
         }
         prHeader.setItems(prItems);
@@ -183,21 +187,23 @@ public class FMController extends CRUDController<PurchaseOrder> {
         Map<String, List<PurchaseOrderItem>> poItemsMap = new HashMap<>();
 
         try {
-            List<String> itemLines = Files.readAllLines(Paths.get(PO_ITEMS_FILE_PATH));
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
             for (String itemLine : itemLines) {
                 PurchaseOrderItem item = PurchaseOrderItem.fromCSV(itemLine);
                 if (item != null && item.getPoId() != null) {
                     poItemsMap.computeIfAbsent(item.getPoId(), k -> new ArrayList<>()).add(item);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase order items: " + PO_ITEMS_FILE_PATH + " " + e.getMessage());
 
             return purchaseOrders;
         }
 
         try {
-            List<String> headerLines = Files.readAllLines(Paths.get(super.filePath));
+            new FileController(super.filePath);
+            List<String> headerLines = FileController.getFile();
             for (String headerLine : headerLines) {
                 PurchaseOrder poHeader = PurchaseOrder.fromCSV(headerLine);
                 if (poHeader != null) {
@@ -205,7 +211,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     purchaseOrders.add(poHeader);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase order header file: " + super.filePath + " " + e.getMessage());
         }
         return purchaseOrders;
@@ -216,20 +222,22 @@ public class FMController extends CRUDController<PurchaseOrder> {
         Map<String, List<PurchaseRequisitionItem>> prItemsMap = new HashMap<>();
 
         try {
-            List<String> itemLines = Files.readAllLines(Paths.get(PR_ITEMS_FILE_PATH));
+            new FileController(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
             for (String itemLine : itemLines) {
                 PurchaseRequisitionItem item = PurchaseRequisitionItem.fromCSV(itemLine);
                 if (item != null && item.getPrId() != null) {
                     prItemsMap.computeIfAbsent(item.getPrId(), k -> new ArrayList<>()).add(item);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase requisition items: " + PR_ITEMS_FILE_PATH + " " + e.getMessage());
             return purchaseRequisitions;
         }
 
         try {
-            List<String> headerLines = Files.readAllLines(Paths.get(PR_HEADER_FILE_PATH));
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> headerLines = FileController.getFile();
             for (String headerLine : headerLines) {
                 PurchaseRequisition prHeader = PurchaseRequisition.fromHeaderCSV(headerLine);
                 if (prHeader != null) {
@@ -237,7 +245,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                     purchaseRequisitions.add(prHeader);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading purchase requisition header file: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
         }
         return purchaseRequisitions;
