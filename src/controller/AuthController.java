@@ -101,7 +101,9 @@ public class AuthController extends CRUDController<User>{
                 new InventoryManagerView((InventoryManager) user, menuItems, quickOptions);
                 break;
             case "FM":
-                FinanceManagerView FinanceManager = new FinanceManagerView(user);
+                String[] financeMenu = {"View Requisitions", "View Purchase Orders", "Financial Management"};
+                String[] financeOptions = {"View Requisitions", "View Purchase Orders", "Financial Management"};
+                new FMView((FinanceManager) user, financeMenu, financeOptions);
                 break;
             default:
                 break;
