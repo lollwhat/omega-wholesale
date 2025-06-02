@@ -102,7 +102,7 @@ public class PurchaseOrderView extends JFrame {
         JOptionPane.showMessageDialog(this, "Functionality to create PO from PR " + prId + " to be implemented.");
     }
 
-    private void showEditPurchaseOrderForm(String poIdToEdit){
+    private void showEditPurchaseOrderForm(String poIdToEdit) {
         JOptionPane.showMessageDialog(this, "Functionality to edit PO " + poIdToEdit + " to be implemented via a dedicated PO edit form.");
         showPurchaseOrderDetailsPopup(poIdToEdit);
     }
@@ -119,7 +119,8 @@ public class PurchaseOrderView extends JFrame {
                 if (poTableModel == null && poTable != null && poTable.getModel() instanceof DefaultTableModel) {
                     poTableModel = (DefaultTableModel) poTable.getModel();
                 } else if (poTableModel == null) {
-                    System.err.println("POTableModel is null. Refresh aborted."); return;
+                    System.err.println("POTableModel is null. Refresh aborted.");
+                    return;
                 }
             }
 
@@ -271,8 +272,8 @@ public class PurchaseOrderView extends JFrame {
     private void updatePOStatusDialog(String poId, String currentStatusStr) {
         JFrame parentDialogFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         int currentStatusIndex = 0;
-        for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
-            if(PO_STATUS_DIALOG_OPTIONS[i].equalsIgnoreCase(currentStatusStr)){
+        for (int i = 0; i < PO_STATUS_DIALOG_OPTIONS.length; i++) {
+            if (PO_STATUS_DIALOG_OPTIONS[i].equalsIgnoreCase(currentStatusStr)) {
                 currentStatusIndex = i;
                 break;
             }
@@ -290,8 +291,8 @@ public class PurchaseOrderView extends JFrame {
 
         if (newStatusStr != null) {
             int newStatusInt = -1;
-            for(int i=0; i < PO_STATUS_DIALOG_OPTIONS.length; i++){
-                if(PO_STATUS_DIALOG_OPTIONS[i].equals(newStatusStr)){
+            for (int i = 0; i < PO_STATUS_DIALOG_OPTIONS.length; i++) {
+                if (PO_STATUS_DIALOG_OPTIONS[i].equals(newStatusStr)) {
                     newStatusInt = i;
                     break;
                 }
@@ -333,7 +334,7 @@ public class PurchaseOrderView extends JFrame {
         JPanel mainDetailPanel = new JPanel();
         mainDetailPanel.setLayout(new BoxLayout(mainDetailPanel, BoxLayout.Y_AXIS));
         mainDetailPanel.setBackground(mediumBlue);
-        mainDetailPanel.setBorder(BorderFactory.createEmptyBorder(15,15,15,15));
+        mainDetailPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JPanel headerDetailsPanel = new JPanel(new GridLayout(0, 2, 8, 8));
         headerDetailsPanel.setBackground(mediumBlue);
@@ -343,13 +344,14 @@ public class PurchaseOrderView extends JFrame {
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
                 new Font("Arial", Font.BOLD, 14), textWhite));
 
-        addDetailRow(headerDetailsPanel, "PO ID:", po.getPoId());
-        addDetailRow(headerDetailsPanel, "PR ID:", po.getPrId());
-        addDetailRow(headerDetailsPanel, "Notes:", po.getNotes());
+//        addDetailRow(headerDetailsPanel, "PO ID:", po.getPoId());
+//        addDetailRow(headerDetailsPanel, "PR ID:", po.getPrId());
+//        addDetailRow(headerDetailsPanel, "Notes:", po.getNotes());
 
         String supplierDisplay = "N/A";
         if (po.getSupplierId() != null && !po.getSupplierId().isEmpty()) {
-            if (supplierController == null) supplierController = new SupplierController(); else this.supplierController = new SupplierController();
+            if (supplierController == null) supplierController = new SupplierController();
+            else this.supplierController = new SupplierController();
             String supData = supplierController.getOneWithId(po.getSupplierId());
             if (supData != null) {
                 String[] supParts = supData.split(",");
@@ -358,18 +360,19 @@ public class PurchaseOrderView extends JFrame {
                 supplierDisplay = po.getSupplierId() + " (Details not found)";
             }
         }
-        addDetailRow(headerDetailsPanel, "Supplier:", supplierDisplay);
-        if (this.poRowMapper == null) this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController); // Ensure mapper is init
-        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus()));
-        addDetailRow(headerDetailsPanel, "Created At:", po.getCreatedAt());
-        addDetailRow(headerDetailsPanel, "Created By:", po.getCreatedBy());
-        addDetailRow(headerDetailsPanel, "Updated At:", po.getUpdatedAt());
-        addDetailRow(headerDetailsPanel, "Updated By:", po.getUpdatedBy());
-        addDetailRow(headerDetailsPanel, "Received At:", po.getReceivedAt() != null ? po.getReceivedAt() : "N/A");
-        addDetailRow(headerDetailsPanel, "Received By:", po.getReceivedBy() != null ? po.getReceivedBy() : "N/A");
+//        addDetailRow(headerDetailsPanel, "Supplier:", supplierDisplay);
+//        if (this.poRowMapper == null)
+//            this.poRowMapper = new PurchaseOrderRowMapper(this.supplierController); // Ensure mapper is init
+//        addDetailRow(headerDetailsPanel, "Status:", poRowMapper.getStatusString(po.getStatus()));
+//        addDetailRow(headerDetailsPanel, "Created At:", po.getCreatedAt());
+//        addDetailRow(headerDetailsPanel, "Created By:", po.getCreatedBy());
+//        addDetailRow(headerDetailsPanel, "Updated At:", po.getUpdatedAt());
+//        addDetailRow(headerDetailsPanel, "Updated By:", po.getUpdatedBy());
+//        addDetailRow(headerDetailsPanel, "Received At:", po.getReceivedAt() != null ? po.getReceivedAt() : "N/A");
+//        addDetailRow(headerDetailsPanel, "Received By:", po.getReceivedBy() != null ? po.getReceivedBy() : "N/A");
 
         mainDetailPanel.add(headerDetailsPanel);
-        mainDetailPanel.add(Box.createRigidArea(new Dimension(0,15)));
+        mainDetailPanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
         JPanel itemsPanel = new JPanel(new BorderLayout());
         itemsPanel.setBackground(mediumBlue);
@@ -400,3 +403,5 @@ public class PurchaseOrderView extends JFrame {
         JScrollPane itemsScrollPane = new JScrollPane(itemsDetailTable);
         itemsScrollPane.setPreferredSize(new Dimension(550, 150));
         itemsPanel.add(itemsScrollPane, BorderLayout.CENTER);
+    }
+}

@@ -4,7 +4,6 @@ import model.User;
 import model.RoleName;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
 import javax.swing.*;
 
 public class FinanceManagerView extends JFrame {
@@ -88,6 +87,29 @@ public class FinanceManagerView extends JFrame {
 
         for(String options : financeOptions) {
             JButton dashboardButton = createDashboardButton(options);
+
+            dashboardButton.addActionListener(e -> {
+                switch (options) {
+                    case "View Requisitions":
+                        System.out.println("View Requisitions clicked");
+                        // Open Requisition View
+                        FinancePurchaseRequisitionView requisitionView = new FinancePurchaseRequisitionView();
+                        requisitionView.setVisible(true);
+                        break;
+                    case "View Purchase Orders":
+                        // Open Purchase Order View
+//                        PurchaseOrderView purchaseOrderView = new PurchaseOrderView(currentUser);
+//                        purchaseOrderView.setVisible(true);
+                        break;
+                    case "Financial Management":
+                        // Open Financial Management View
+//                        FinancialManagementView financialManagementView = new FinancialManagementView(currentUser);
+//                        financialManagementView.setVisible(true);
+                        break;
+                    default:
+                        break;
+                }
+            });
             buttonWrapper.add(dashboardButton);
         }
 
@@ -142,6 +164,29 @@ public class FinanceManagerView extends JFrame {
 
         for(String options : financeOptions) {
             JButton navigationButton = createNavigationButton(options);
+
+            navigationButton.addActionListener(e -> {
+                switch (options) {
+                    case "View Requisitions":
+                        System.out.println("View Requisitions clicked");
+                        // Open Requisition View
+                        FinancePurchaseRequisitionView requisitionView = new FinancePurchaseRequisitionView();
+                        requisitionView.setVisible(true);
+                        break;
+                    case "View Purchase Orders":
+                        // Open Purchase Order View
+//                        PurchaseOrderView purchaseOrderView = new PurchaseOrderView(currentUser);
+//                        purchaseOrderView.setVisible(true);
+                        break;
+                    case "Financial Management":
+                        // Open Financial Management View
+//                        FinancialManagementView financialManagementView = new FinancialManagementView(currentUser);
+//                        financialManagementView.setVisible(true);
+                        break;
+                    default:
+                        break;
+                }
+            });
             buttonWrapper.add(navigationButton);
         }
 
