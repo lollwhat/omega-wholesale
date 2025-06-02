@@ -21,12 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FinancePOManagementView extends JFrame {
-    private final Color darkBlue = UITheme.DARK_BLUE;
-    private final Color mediumBlue = UITheme.MEDIUM_BLUE;
+    private final Color background = UITheme.DARK_BLUE;
+    private final Color panelColour = UITheme.MEDIUM_BLUE;
     private final Color lightBlue = UITheme.LIGHT_BLUE;
     protected final Color verylightBlue = UITheme.VERY_LIGHT_BLUE;
-    private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE;
-    private final Color textWhite = UITheme.TEXT_WHITE;
+    private final Color labelColour = UITheme.HIGHLIGHT_BLUE;
+    private final Color textColour = UITheme.TEXT_WHITE;
 
     private JTable poTable;
     private DefaultTableModel poTableModel;
@@ -43,25 +43,25 @@ public class FinancePOManagementView extends JFrame {
 
     public JPanel createPurchaseOrderPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
-        mainPanel.setBackground(mediumBlue);
+        mainPanel.setBackground(panelColour);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(mediumBlue);
+        headerPanel.setBackground(panelColour);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
         JLabel titleLabel = new JLabel("Purchase Order Management"); // Corrected label
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setForeground(highlightBlue);
+        titleLabel.setForeground(labelColour);
 
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        titlePanel.setBackground(mediumBlue);
+        titlePanel.setBackground(panelColour);
         titlePanel.add(titleLabel);
 
         headerPanel.add(titlePanel, BorderLayout.NORTH);
 
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(darkBlue);
+        tablePanel.setBackground(background);
         tablePanel.add(createPOTable(), BorderLayout.CENTER);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
@@ -155,13 +155,13 @@ public class FinancePOManagementView extends JFrame {
 
         this.poTable = new JTable(this.poTableModel);
         // Standard table styling
-        poTable.setBackground(darkBlue);
-        poTable.setForeground(textWhite);
+        poTable.setBackground(background);
+        poTable.setForeground(textColour);
         poTable.setGridColor(new Color(50, 60, 80));
         poTable.setRowHeight(45);
         poTable.setFont(new Font("Arial", Font.PLAIN, 13));
         poTable.getTableHeader().setBackground(new Color(150, 165, 235));
-        poTable.getTableHeader().setForeground(textWhite);
+        poTable.getTableHeader().setForeground(textColour);
         poTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         poTable.setSelectionBackground(new Color(60, 70, 90));
         poTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -209,7 +209,7 @@ public class FinancePOManagementView extends JFrame {
         });
 
         JScrollPane scrollPane = new JScrollPane(this.poTable);
-        scrollPane.getViewport().setBackground(darkBlue);
+        scrollPane.getViewport().setBackground(background);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         return scrollPane;
     }
@@ -218,7 +218,7 @@ public class FinancePOManagementView extends JFrame {
     private JButton createActionButton(String text, ActionListener listener) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.PLAIN, 12));
-        button.setForeground(textWhite);
+        button.setForeground(textColour);
         button.setBackground(lightBlue);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
@@ -281,7 +281,7 @@ public class FinancePOManagementView extends JFrame {
         private JButton createLocalActionButton(String text) {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 12));
-            button.setForeground(parentView.textWhite);
+            button.setForeground(parentView.textColour);
             button.setBackground(parentView.lightBlue);
             button.setMargin(new Insets(2, 8, 2, 8));
             button.setFocusPainted(false);
@@ -291,7 +291,7 @@ public class FinancePOManagementView extends JFrame {
 
         @Override
         public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
-            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? darkBlue : new Color(40,50,70) ) ); // Example alternating color
+            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? background : new Color(40,50,70) ) ); // Example alternating color
             return panel;
         }
 
@@ -323,20 +323,20 @@ public class FinancePOManagementView extends JFrame {
 
         JDialog detailDialog = new JDialog(parentDialogFrame, "Purchase Order Details: " + poId, true);
         detailDialog.setLayout(new BorderLayout(10, 10));
-        detailDialog.getContentPane().setBackground(mediumBlue);
+        detailDialog.getContentPane().setBackground(panelColour);
 
         JPanel mainDetailPanel = new JPanel();
         mainDetailPanel.setLayout(new BoxLayout(mainDetailPanel, BoxLayout.Y_AXIS));
-        mainDetailPanel.setBackground(mediumBlue);
+        mainDetailPanel.setBackground(panelColour);
         mainDetailPanel.setBorder(BorderFactory.createEmptyBorder(15,15,15,15));
 
         JPanel headerDetailsPanel = new JPanel(new GridLayout(0, 2, 8, 8)); // Auto rows based on content
-        headerDetailsPanel.setBackground(mediumBlue);
+        headerDetailsPanel.setBackground(panelColour);
         headerDetailsPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(lightBlue), "Header Information",
                 javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
-                new Font("Arial", Font.BOLD, 14), textWhite));
+                new Font("Arial", Font.BOLD, 14), textColour));
 
         addDetailRow(headerDetailsPanel, "PO ID:", po.getPoId());
         addDetailRow(headerDetailsPanel, "PR ID:", po.getPrId());
@@ -357,12 +357,12 @@ public class FinancePOManagementView extends JFrame {
 
         // --- Items Panel ---
         JPanel itemsPanel = new JPanel(new BorderLayout());
-        itemsPanel.setBackground(mediumBlue);
+        itemsPanel.setBackground(panelColour);
         itemsPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(lightBlue), "Ordered Items",
                 javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
-                new Font("Arial", Font.BOLD, 14), textWhite));
+                new Font("Arial", Font.BOLD, 14), textColour));
 
         // New column for item-specific supplier
         String[] itemTableColumns = {"Item ID", "Item Code", "Item Name", "Supplier", "Qty", "Unit Price (ea.)", "Total Price"};
@@ -411,11 +411,11 @@ public class FinancePOManagementView extends JFrame {
 
         JScrollPane detailScrollPane = new JScrollPane(mainDetailPanel);
         detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
-        detailScrollPane.getViewport().setBackground(mediumBlue);
+        detailScrollPane.getViewport().setBackground(panelColour);
 
         JButton closeButton = createActionButton("Close", _ -> detailDialog.dispose());
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setBackground(mediumBlue);
+        buttonPanel.setBackground(panelColour);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
         buttonPanel.add(closeButton);
 
@@ -430,7 +430,7 @@ public class FinancePOManagementView extends JFrame {
 
     private void addDetailRow(JPanel panel, String label, String value) {
         JLabel labelName = new JLabel(label);
-        labelName.setForeground(textWhite);
+        labelName.setForeground(textColour);
         labelName.setFont(new Font("Arial", Font.BOLD, 13));
         panel.add(labelName);
 
