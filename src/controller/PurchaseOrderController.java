@@ -37,6 +37,14 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         }
     }
 
+    public String getPoHeaderFilePath() {
+        return PO_HEADER_FILE_PATH;
+    }
+
+    public String getPoItemsFilePath() {
+        return PO_ITEMS_FILE_PATH;
+    }
+
     private void appendLineToFile(String filePath, String data) throws IOException {
         boolean needsNewLine = false;
         File file = new File(filePath);
@@ -78,9 +86,6 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         }
     }
 
-    /**
-     * Adds a complete PurchaseOrder (header and its items).
-     */
     @Override
     public void add(PurchaseOrder purchaseOrder) {
         if (purchaseOrder == null || purchaseOrder.getPoId() == null) {
@@ -104,7 +109,7 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         }
     }
 
-    public PurchaseOrder createPurchaseOrderFromPR(String prId, String notes, String supplierId, List<PurchaseOrderItem> itemsData) {
+    public PurchaseOrder createPurchaseOrderFromPR(String prId, String notes, List<PurchaseOrderItem> itemsData) {
         String poId;
         try {
             new FileController(PO_HEADER_FILE_PATH);
@@ -134,15 +139,23 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         String createdBy = SessionController.getInstance().getUserId();
         int initialStatus = 0;
 
-        PurchaseOrder newPO = new PurchaseOrder(poId, prId, notes, supplierId, initialStatus, createdAt, createdBy, createdAt, null, createdBy, null);
+        PurchaseOrder newPO = new PurchaseOrder(poId, prId, notes, initialStatus, createdAt, createdBy, createdAt, createdBy, null, null);
 
         if (itemsData != null) {
             for (PurchaseOrderItem item : itemsData) {
-                newPO.addItem(new PurchaseOrderItem(poId, item.getItemId(), item.getItemCode(), item.getItemName(), item.getQuantity(), item.getPrice(), item.getTotalPrice()));
+                newPO.addItem(new PurchaseOrderItem(
+                        poId,
+                        item.getItemId(),
+                        item.getItemCode(),
+                        item.getItemName(),
+                        item.getQuantity(),
+                        item.getPrice(),
+                        item.getSelectedSupplierId()
+                ));
             }
         }
         add(newPO);
-        System.out.println("New Purchase Order " + poId + " created successfully from PR " + prId);
+        System.out.println("New Purchase Order " + poId + " created successfully from PR " + prId + " with items from various suppliers.");
         return newPO;
     }
 
@@ -188,8 +201,9 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         }
     }
 
-    public boolean updatePurchaseOrderStatus(String poId, int newStatus, String userId) {
+    public boolean updatePurchaseOrderStatus(String poId, int newStatus) {
         new FileController(PO_HEADER_FILE_PATH);
+        String userId = SessionController.getInstance().getUserId();
         PurchaseOrder po = getPurchaseOrderHeaderById(poId);
         if (po == null) {
             System.err.println("Purchase Order " + poId + " not found for status update.");
@@ -200,10 +214,10 @@ public class PurchaseOrderController extends CRUDController<PurchaseOrder> {
         po.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         po.setUpdatedBy(userId);
 
-        if (newStatus == 1) {
+        if (newStatus == 2) {
             po.setReceivedAt(po.getUpdatedAt());
             po.setReceivedBy(userId);
-        } else if (newStatus == 0 || newStatus == 2) {
+        } else if (newStatus == 0 || newStatus == 1 || newStatus == 3) {
             po.setReceivedAt(null);
             po.setReceivedBy(null);
         }

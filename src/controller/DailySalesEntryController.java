@@ -30,8 +30,6 @@ public class DailySalesEntryController extends CRUDController<DailySalesEntry> {
         String updatedBy = SessionController.getInstance().getUserId();
         DailySalesEntry dailySalesEntry = new DailySalesEntry("DSE" + String.format("%03d", tempItemId), itemId, itemName, salesDate, quantity, netIncome, createdAt, createdBy, createdAt, updatedBy);
         add(dailySalesEntry);
-        String data = dailySalesEntry.toCSV();
-        FileController.appendFile(data);
         System.out.println("Daily sales entered successfully");
     }
 

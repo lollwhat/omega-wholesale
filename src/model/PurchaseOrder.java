@@ -7,8 +7,7 @@ public class PurchaseOrder {
     private String poId;
     private String prId;
     private String notes;
-    private String supplierId;
-    private int status; // 0: processing, 1: received, 2: cancelled
+    private int status; // 0: pending, 1: received, 2: cancelled
     private String createdAt;
     private String createdBy;
     private String updatedAt;
@@ -18,20 +17,19 @@ public class PurchaseOrder {
 
     private List<PurchaseOrderItem> items;
 
-    public PurchaseOrder(String poId, String prId, String notes, String supplierId,
+    public PurchaseOrder(String poId, String prId, String notes,
                          int status, String createdAt, String createdBy, String updatedAt, String updatedBy,
                          String receivedAt, String receivedBy, List<PurchaseOrderItem> itemsList) {
         this.poId = poId;
         this.prId = prId;
         this.notes = notes;
-        this.supplierId = supplierId;
         this.status = status; // 0: Pending, 1: Approved, 2: Received, 3: Cancelled
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.updatedAt = updatedAt;
         this.updatedBy = updatedBy;
-        this.receivedAt = (receivedAt == null || receivedAt.equalsIgnoreCase("processing")) ? null : receivedAt;
-        this.receivedBy = (receivedBy == null || receivedBy.equalsIgnoreCase("processing")) ? null : receivedBy;
+        this.receivedAt = (receivedAt == null || receivedAt.equalsIgnoreCase("Pending")) ? null : receivedAt;
+        this.receivedBy = (receivedBy == null || receivedBy.equalsIgnoreCase("Pending")) ? null : receivedBy;
         this.items = itemsList != null ? new ArrayList<>(itemsList) : new ArrayList<>();
         for (PurchaseOrderItem item : this.items) {
             if (item.getPoId() == null || !item.getPoId().equals(this.poId)) {
@@ -40,10 +38,10 @@ public class PurchaseOrder {
         }
     }
 
-    public PurchaseOrder(String poId, String prId, String notes, String supplierId,
+    public PurchaseOrder(String poId, String prId, String notes,
                          int status, String createdAt, String createdBy, String updatedAt, String updatedBy,
                          String receivedAt, String receivedBy) {
-        this(poId, prId, notes, supplierId, status, createdAt, createdBy, updatedAt, updatedBy, receivedAt, receivedBy, new ArrayList<>());
+        this(poId, prId, notes, status, createdAt, createdBy, updatedAt, updatedBy, receivedAt, receivedBy, new ArrayList<>());
     }
 
     // Getters
@@ -55,9 +53,6 @@ public class PurchaseOrder {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-
-    public String getSupplierId() { return supplierId; }
-    public void setSupplierId(String supplierId) { this.supplierId = supplierId; }
 
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }
@@ -75,10 +70,10 @@ public class PurchaseOrder {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public String getReceivedAt() { return receivedAt; }
-    public void setReceivedAt(String receivedAt) { this.receivedAt = (receivedAt != null && receivedAt.equalsIgnoreCase("processing")) ? null : receivedAt; }
+    public void setReceivedAt(String receivedAt) { this.receivedAt = (receivedAt != null && receivedAt.equalsIgnoreCase("Pending")) ? null : receivedAt; }
 
     public String getReceivedBy() { return receivedBy; }
-    public void setReceivedBy(String receivedBy) { this.receivedBy = (receivedBy != null && receivedBy.equalsIgnoreCase("processing")) ? null : receivedBy; }
+    public void setReceivedBy(String receivedBy) { this.receivedBy = (receivedBy != null && receivedBy.equalsIgnoreCase("Pending")) ? null : receivedBy; }
 
     public List<PurchaseOrderItem> getItems() { return items; }
 
@@ -102,12 +97,11 @@ public class PurchaseOrder {
     }
 
     public String toCSV() {
-        // poId,prId,notes,supplierId,status,createdAt,createdBy,updatedAt,updatedBy,receivedAt,receivedBy
+        // poId,prId,notes,status,createdAt,createdBy,updatedAt,updatedBy,receivedAt,receivedBy
         return String.join(",",
                 poId != null ? poId.replace(",", ";") : "",
                 prId != null ? prId.replace(",", ";") : "",
                 notes != null ? notes.replace(",", ";") : "",
-                supplierId != null ? supplierId.replace(",", ";") : "",
                 String.valueOf(status),
                 createdAt != null ? createdAt : "",
                 createdBy != null ? createdBy : "",
@@ -121,9 +115,9 @@ public class PurchaseOrder {
     public static PurchaseOrder fromCSV(String csvLine) {
         if (csvLine == null || csvLine.trim().isEmpty()) return null;
         String[] parts = csvLine.split(",");
-        // poId,prId,notes,supplierId,status,createdAt,createdBy,updatedAt,updatedBy,receivedAt,receivedBy
-        if (parts.length < 11) {
-            System.err.println("PurchaseOrder.fromHeaderCSV: Malformed line, expected 11 parts, got " + parts.length + ": " + csvLine);
+        // poId,prId,notes,status,createdAt,createdBy,updatedAt,updatedBy,receivedAt,receivedBy
+        if (parts.length < 10) {
+            System.err.println("PurchaseOrder.fromHeaderCSV: Malformed line, expected 10 parts, got " + parts.length + ": " + csvLine);
             return null;
         }
         try {
@@ -131,14 +125,13 @@ public class PurchaseOrder {
                     parts[0].replace(";", ","), // poId
                     parts[1].replace(";", ","), // prId
                     parts[2].replace(";", ","), // notes
-                    parts[3].replace(";", ","), // supplierId
-                    Integer.parseInt(parts[4]), // status
-                    parts[5], // createdAt
-                    parts[6], // createdBy
-                    parts[7], // updatedAt
-                    parts[8], // updatedBy
-                    parts[9].isEmpty() ? null : parts[9],  // receivedAt - nullable
-                    parts[10].isEmpty() ? null : parts[10] // receivedBy - nullable
+                    Integer.parseInt(parts[3]), // status
+                    parts[4], // createdAt
+                    parts[5], // createdBy
+                    parts[6], // updatedAt
+                    parts[7], // updatedBy
+                    parts[8].isEmpty() ? null : parts[8],  // receivedAt - nullable
+                    parts[9].isEmpty() ? null : parts[9] // receivedBy - nullable
             );
         } catch (NumberFormatException e) {
             System.err.println("Error parsing PO status from CSV: " + csvLine + " - " + e.getMessage());
@@ -162,7 +155,6 @@ public class PurchaseOrder {
                 "\"poId\": \"" + poId + "\"," +
                 "\"prId\": \"" + prId + "\"," +
                 "\"notes\": \"" + notes  + "\"," +
-                "\"supplierId\": \"" + supplierId + "\"," +
                 "\"status\": " + status + "\"," +
                 "\"createdAt\": \"" + createdAt + "\"," +
                 "\"createdBy\": \"" + createdBy  + "\"," +

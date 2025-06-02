@@ -32,6 +32,10 @@ public class SupplierManagementView extends JFrame {
         "Supplier ID", "Company", "Person-In-Charged (PIC)", "Description", "Address",
         "Contact Number", "Email", "Status", "Created At", "Created By", "Updated At", "Updated By", "Actions"
     };
+    private final String[] supplierViewColumnNames = { // Made this an instance variable
+        "Supplier ID", "Company", "Person-In-Charged (PIC)", "Description", "Address",
+        "Contact Number", "Email", "Status", "Created At", "Created By", "Updated At", "Updated By"
+    };
 
     // Constructor (if SupplierManagementView is the main frame)
     public SupplierManagementView() {
@@ -95,6 +99,38 @@ public class SupplierManagementView extends JFrame {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(darkBlue);
         tablePanel.add(createTable(), BorderLayout.CENTER); // Removed supplierColumnNames argument
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
+        // Initial data load
+        refreshTable();
+
+        return mainPanel;
+    }
+
+    public JPanel createViewSupplierPanel(){
+
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(mediumBlue);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(mediumBlue);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel titleLabel = new JLabel("View Supplier");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(highlightBlue);
+
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(mediumBlue);
+        titlePanel.add(titleLabel);
+        headerPanel.add(titlePanel, BorderLayout.NORTH);
+
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(darkBlue);
+        tablePanel.add(createViewOnlyTable(), BorderLayout.CENTER); // Removed supplierColumnNames argument
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
@@ -221,6 +257,70 @@ public class SupplierManagementView extends JFrame {
                             if (supplierId != null && !supplierId.trim().isEmpty()) {
                                 showSupplierDetailsPopup(supplierId, supplierColumnNames);
                             }
+                        }
+                    }
+                }
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(this.table);
+        scrollPane.getViewport().setBackground(darkBlue);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        return scrollPane;
+    }
+
+    private JScrollPane createViewOnlyTable(){
+        List<String> rawSupplierData = supplierController.getAll();
+
+        // Initialize the instance variable supplierTableModel
+        this.supplierTableModel = GenericModelHelper.createGenericTableModel(
+                rawSupplierData,
+                this.supplierViewColumnNames,
+                this.supplierRowMapper,
+                GenericModelHelper.NO_CELLS_EDITABLE
+        );
+
+        // Initialize the instance variable table
+        this.table = new JTable(this.supplierTableModel);
+        table.setBackground(darkBlue);
+        table.setForeground(textWhite);
+        table.setGridColor(new Color(50, 60, 80));
+        table.setRowHeight(45);
+        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        table.getTableHeader().setBackground(new Color(150, 165, 235));
+        table.getTableHeader().setForeground(textWhite);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.setSelectionBackground(new Color(60, 70, 90));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Important for horizontal scrolling
+
+        // Set preferred column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(100); // Supplier Id
+        table.getColumnModel().getColumn(1).setPreferredWidth(180); // Company
+        table.getColumnModel().getColumn(2).setPreferredWidth(180); // PIC
+        table.getColumnModel().getColumn(3).setPreferredWidth(160);  // Description
+        table.getColumnModel().getColumn(4).setPreferredWidth(160); // Address
+        table.getColumnModel().getColumn(5).setPreferredWidth(140); // Phone
+        table.getColumnModel().getColumn(6).setPreferredWidth(160); // Email
+        table.getColumnModel().getColumn(7).setPreferredWidth(100); // Status
+        table.getColumnModel().getColumn(8).setPreferredWidth(160); // Created By
+        table.getColumnModel().getColumn(9).setPreferredWidth(100); // Updated At
+        table.getColumnModel().getColumn(10).setPreferredWidth(160); // Updated By
+        table.getColumnModel().getColumn(11).setPreferredWidth(100); // Updated By
+
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) { // Changed to single click for detail view
+                    int viewRow = table.rowAtPoint(e.getPoint());
+                    int viewColumn = table.columnAtPoint(e.getPoint());
+
+                    if (viewRow >= 0 && viewColumn >= 0) {
+                        int modelRow = table.convertRowIndexToModel(viewRow);
+                        String supplierId = (String) table.getModel().getValueAt(modelRow, 0);
+                        if (supplierId != null && !supplierId.trim().isEmpty()) {
+                            showSupplierDetailsPopup(supplierId, supplierColumnNames);
                         }
                     }
                 }

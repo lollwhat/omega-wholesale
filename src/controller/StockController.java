@@ -39,7 +39,7 @@ public class StockController extends CRUDController<Stock> {
 
         try {
             int tempStockId = FileController.getFile().size() + 1;
-            String createdAt = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             String updatedBy = SessionController.getInstance().getUserId();
 
             Stock stock = new Stock(
@@ -100,11 +100,78 @@ public class StockController extends CRUDController<Stock> {
             stock.setMinStock((minStock != null) ? minStock : Integer.parseInt(existingStockDetails[4]));
             stock.setMaxStock((maxStock != null) ? maxStock : Integer.parseInt(existingStockDetails[5]));
             stock.setStatus((status != null) ? status : existingStockDetails[6]);
-            stock.setLastUpdateDate(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+            stock.setLastUpdateDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
             update(stock);
         } catch (Exception e) {
             System.err.println("Error updating stock: " + e.getMessage());
+        }
+    }
+
+    public boolean subtractStockQuantity(String itemCode, int quantityToSubtract) {
+        if (quantityToSubtract <= 0) {
+            System.err.println("Error: Quantity to subtract must be positive.");
+            return false;
+        }
+
+        try {
+            List<String> stockLines = FileController.getFile(); // Reads from this.filePath which is STOCK_DETAILS_FILE
+            List<String> updatedStockLines = new ArrayList<>();
+            boolean itemFoundAndUpdated = false;
+            String stockFilePath = this.filePath; // Use the filePath from CRUDController
+
+            for (String line : stockLines) {
+                String[] stockDetails = line.split(",");
+                String currentItemCode = stockDetails[1].trim();
+
+                if (currentItemCode.equalsIgnoreCase(itemCode)) {
+                    int currentStock = Integer.parseInt(stockDetails[3].trim());
+                    int minStock = Integer.parseInt(stockDetails[4].trim());
+                    // String currentStatus = stockDetails[6].trim(); // Current status
+
+                    if (currentStock < quantityToSubtract) {
+                        System.err.println("Error: Insufficient stock for item " + itemCode +
+                                ". Available: " + currentStock + ", Requested: " + quantityToSubtract);
+                        return false; // Indicate failure
+                    }
+
+                    int newStock = currentStock - quantityToSubtract;
+                    stockDetails[3] = String.valueOf(newStock); // Update quantity
+                    stockDetails[7] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()); // Update lastUpdateDate
+
+                    // Update status string based on new stock level
+                    if (newStock == 0) {
+                        stockDetails[6] = "Out of Stock";
+                    } else if (newStock <= minStock) {
+                        stockDetails[6] = "Low Stock";
+                    } else {
+                        stockDetails[6] = "In Stock";
+                    }
+                    itemFoundAndUpdated = true;
+                }
+                updatedStockLines.add(String.join(",", stockDetails));
+            }
+
+            if (!itemFoundAndUpdated) {
+                System.err.println("Error: Item code " + itemCode + " not found in stock for subtraction.");
+                return false;
+            }
+
+            // Overwrite the file with updated stock lines
+            Files.write(Paths.get(stockFilePath), updatedStockLines);
+            System.out.println("Stock quantity subtracted successfully for item: " + itemCode);
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Error reading/writing stock file during subtraction: " + e.getMessage());
+            return false;
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing stock quantity from file: " + e.getMessage());
+            return false;
+        } catch (Exception e) { // Catch any other unexpected errors
+            System.err.println("An unexpected error occurred during stock subtraction: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -126,13 +193,16 @@ public class StockController extends CRUDController<Stock> {
                 if (poDetails[0].equals(poId)) {
                     poFound = true;
 
-                    if (!"1".equals(poDetails[4].trim())) { // check if PO is not "Approved"
+                    if (!"1".equals(poDetails[3].trim())) { // check if PO is not "Approved"
                         System.out.println("Purchase order ID " + poId + " is not in 'Approved' state and cannot be received.");
                         return false;
                     }
 
-                    // update status to "Received" (2)
-                    poDetails[4] = "2";
+                    poDetails[3] = "2";
+                    poDetails[6] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                    poDetails[7] = SessionController.getInstance().getUserId();
+                    poDetails[8] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                    poDetails[9] = SessionController.getInstance().getUserId();
                     poLines.set(i, String.join(",", poDetails));
                     break;
                 }
@@ -152,43 +222,39 @@ public class StockController extends CRUDController<Stock> {
                     poItemDetails[k] = poItemDetails[k].trim();
                 }
 
-                if (poItemDetails[0].equals(poId)) {
-                    String itemName = poItemDetails[3];
-                    int quantityToAdd = Integer.parseInt(poItemDetails[4]);
+                if (poItemDetails[0].equals(poId)) { // Check if the item belongs to the current PO
+                    String itemCodeFromPO = poItemDetails[2]; // PurchaseOrderItem.itemCode (index 2)
+                    int quantityToAdd = Integer.parseInt(poItemDetails[4]); // PurchaseOrderItem.quantity (index 4)
 
-                    // update or add stock
                     boolean itemStockUpdated = false;
-
                     for (int j = 0; j < updatedStockLines.size(); j++) {
                         String[] stockDetails = updatedStockLines.get(j).split(",");
                         for (int k = 0; k < stockDetails.length; k++) {
                             stockDetails[k] = stockDetails[k].trim();
                         }
 
-                        if (stockDetails[1].equalsIgnoreCase(itemName)) {
-                            int currentStock = Integer.parseInt(stockDetails[2].trim());
-                            stockDetails[2] = String.valueOf(currentStock + quantityToAdd);
+                        // Match using itemCode (stockDetails[1] is Stock.itemCode)
+                        if (stockDetails[1].equalsIgnoreCase(itemCodeFromPO)) {
+                            int currentStockValue = Integer.parseInt(stockDetails[3].trim()); // currentStock is at index 3
+                            int maxStockValue = Integer.parseInt(stockDetails[5].trim()); // maxStock is at index 5
+
+                            int newStock = currentStockValue + quantityToAdd;
+                            // Optional: Check against maxStock if necessary, though typically receiving POs increases stock.
+                            // if (newStock > maxStockValue) {
+                            //     System.err.println("Warning: Receiving item " + itemCodeFromPO + " exceeds max stock level.");
+                            //     // Decide handling: cap at maxStock or allow exceeding
+                            // }
+
+                            stockDetails[3] = String.valueOf(newStock); // Update currentStock at index 3
+                            stockDetails[7] = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()); // Update lastUpdateDate at index 7
                             updatedStockLines.set(j, String.join(",", stockDetails));
                             itemStockUpdated = true;
                             break;
                         }
                     }
-
-                    // if item not found in stock, add a new entry
-                    if (!itemStockUpdated) {
-                        String newStockEntry = String.format(
-                                "ST%03d,%s,%d,1,1000,In Stock,%s",
-                                updatedStockLines.size() + 1,
-                                itemName,
-                                quantityToAdd,
-                                new SimpleDateFormat("yyyy-MM-dd").format(new Date())
-                        );
-                        updatedStockLines.add(newStockEntry);
-                    }
                 }
             }
 
-            // write back updated data to files
             Files.write(Paths.get("data/purchase_order.txt"), poLines);
             Files.write(Paths.get("data/stock_details.txt"), updatedStockLines);
 
@@ -214,6 +280,7 @@ public class StockController extends CRUDController<Stock> {
     }
 
     public List<String> getAllStocks() {
+        new FileController(this.filePath);
         try {
             return FileController.getFile();
         } catch (Exception e) {
@@ -237,6 +304,21 @@ public class StockController extends CRUDController<Stock> {
         }
     }
 
+    public String getStockByItemCode(String itemCode) {
+        try {
+            String[] stockDetails = fileController.getLine(1, itemCode);
+            if (stockDetails != null) {
+                return String.join(",", stockDetails);
+            } else {
+                System.err.println("Error: Stock not found.");
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading stock: " + e.getMessage());
+            return null;
+        }
+    }
+
     public void generateStockReport(String savePath) throws IOException {
         Path stockFilePath = Paths.get(STOCK_DETAILS_FILE);
 
@@ -244,14 +326,12 @@ public class StockController extends CRUDController<Stock> {
             throw new IOException("Stock file not found.");
         }
 
-        // read the stock data
         StringBuilder reportContent = new StringBuilder();
         reportContent.append("Stock ID,Item Code, Item Name,Current Stock,Min Stock,Max Stock,Status,Date\n");
         for (String line : Files.readAllLines(stockFilePath)) {
             reportContent.append(line).append("\n");
         }
 
-        // save the report to the specified path
         try (FileWriter writer = new FileWriter(savePath)) {
             writer.write(reportContent.toString());
         }

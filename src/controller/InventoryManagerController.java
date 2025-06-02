@@ -188,7 +188,7 @@ public class InventoryManagerController {
 //            for (String line : lines) {
 //                String[] columns = line.split(",");
 //                String statusString = getStatusString(columns[4].trim());
-//                if ("Processing".equalsIgnoreCase(statusString)) {
+//                if ("Pending".equalsIgnoreCase(statusString)) {
 //                    approvedPurchaseOrders.add(new Object[]{
 //                            columns[0].trim(), // PO ID
 //                            columns[1].trim(), // PR ID
@@ -229,7 +229,7 @@ public class InventoryManagerController {
                 poItemsMap.computeIfAbsent(poId, k -> new ArrayList<>()).add(itemDetails);
             }
 
-            // read purchase_order.txt and join with items for "Processing" POs only
+            // read purchase_order.txt and join with items for "Pending" POs only
             List<String> poLines = Files.readAllLines(Paths.get("data/purchase_order.txt"));
             for (String poLine : poLines) {
                 String[] poDetails = poLine.split(",");
@@ -294,7 +294,7 @@ public class InventoryManagerController {
         try {
             int statusInt = Integer.parseInt(statusValue.trim());
             return switch (statusInt) {
-                case 0 -> "Processing";
+                case 0 -> "Pending";
                 case 1 -> "Approved";
                 case 2 -> "Received";
                 case 3 -> "Cancelled";
