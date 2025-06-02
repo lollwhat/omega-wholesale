@@ -37,6 +37,25 @@ public class FileController {
         return fileLines;
     }
 
+    // Method to verify username
+    public static boolean verifyUsername(String username, String currentUserID) {
+        readFile();
+        for (String line : fileLines) {
+            String[] parts = line.split(",");
+            if (parts.length > 1 && parts[1].trim().equals(username.trim())) {
+                if (currentUserID != null && parts[0].equals(currentUserID)) {
+                    continue;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean verifyUsername(String email) {
+        return verifyUsername(email, null);
+    }
+
     // Method to get a single line of data
     public String[] getLine(int index, String identifier) throws IOException {
         readFile();

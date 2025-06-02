@@ -2,6 +2,8 @@ package controller;
 
 import model.*;
 import view.*;
+
+import javax.swing.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -56,12 +58,16 @@ public class AuthController extends CRUDController<User>{
                 String updatedAt = details[8].trim();
                 String roleCode = userId.substring(0, 2);
 
-                User user = userInstance(roleCode, userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+                if(status.equals("active")) {
+                    User user = userInstance(roleCode, userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
 
-                // Set the current user in the session manager
-                if(user != null){
-                    sessionManager.setCurrentUser(user);
-                    return user;
+                    // Set the current user in the session manager
+                    if (user != null) {
+                        sessionManager.setCurrentUser(user);
+                        return user;
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(null, "Your account is inactive. Please contact the administrator for more details.");
                 }
             }
         }
