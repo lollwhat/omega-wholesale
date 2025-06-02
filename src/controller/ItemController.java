@@ -86,7 +86,7 @@ public class ItemController extends CRUDController<Item> {
         }
     }
 
-    public void updateItem(String itemEntryId, String itemCode, String itemName, String unit, String unitPrice, String supplierId) {
+    public void updateItem(String itemEntryId, String itemCode, String itemName, String unit, String unitPrice) {
         try {
             String[] existingItemDetails = fileController.getLine(0, itemEntryId);
             if (existingItemDetails == null) {

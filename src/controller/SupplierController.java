@@ -13,10 +13,10 @@ public class SupplierController extends CRUDController<Supplier> {
         super("data/supplier_details.txt", EntityType.ITEM);
     }
 
-    public String getOneByCompanyName(String supplierName) {
+    public String getOneByCompanyName(String supplierCompany) {
         new FileController("data/supplier_details.txt");
         try {
-            String[] details = fileController.getLine(1, supplierName);
+            String[] details = fileController.getLine(1, supplierCompany);
             if (details != null) {
                 return String.join(",", details);
             } else {

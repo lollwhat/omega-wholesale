@@ -359,7 +359,7 @@ public class AddItemForm extends BaseForm {
                 showSuccess("Item added successfully!");
             } else {
                 new FileController("data/item_details.txt");
-                itemController.updateItem(editItemId, itemCode, itemName, unit, unitPrice, null);
+                itemController.updateItem(editItemId, itemCode, itemName, unit, unitPrice);
                 currentItemEntryId = editItemId;
                 showSuccess("Item updated successfully!");
             }
