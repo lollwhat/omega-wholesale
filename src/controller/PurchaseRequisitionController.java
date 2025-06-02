@@ -10,27 +10,36 @@ import java.util.*;
 
 public class PurchaseRequisitionController extends CRUDController<PurchaseRequisition> {
     private static final String PR_ITEMS_FILE_PATH = "data/purchase_requisition_item.txt";
-    private static final String PR_HEADER_FILE_PATH = "data/purchase_requisition.txt";
+    private static final String PR_HEADER_FILE_PATH = "data/purchase_requisition.txt"; // This is super.filePath
 
     public PurchaseRequisitionController() {
-        super("data/purchase_requisition.txt", EntityType.PURCHASE_REQUISITION);
+        super(PR_HEADER_FILE_PATH, EntityType.PURCHASE_REQUISITION);
+    }
+
+    public String getPrFilePath() {
+        return PR_ITEMS_FILE_PATH;
+    }
+
+    public String getPrHeaderFilePath() {
+        return PR_HEADER_FILE_PATH;
     }
 
     private void appendLineToFile(String filePath, String data) throws IOException {
         boolean needsNewLine = false;
         File file = new File(filePath);
-        if (file.exists() && file.length() > 0) {
+        if (!file.exists()) {
+            if (file.getParentFile() != null) file.getParentFile().mkdirs();
+            file.createNewFile();
+        } else if (file.length() > 0) {
             try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
                 if (raf.length() > 0) {
                     raf.seek(raf.length() - 1);
-                    char lastChar = (char) raf.read();
-                    if (lastChar != '\n' && lastChar != '\r') {
+                    if (raf.read() != '\n') {
                         needsNewLine = true;
                     }
                 }
             }
         }
-
 
         try (FileWriter fw = new FileWriter(filePath, true)) {
             if (needsNewLine) {
@@ -41,30 +50,40 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
         }
     }
 
-    private void overwriteFileWithLines(List<String> lines) throws IOException {
-        try (FileWriter fw = new FileWriter(PurchaseRequisitionController.PR_ITEMS_FILE_PATH, false)) {
+    private void overwriteFileWithLines(String filePath, List<String> lines) throws IOException {
+        try (FileWriter fw = new FileWriter(filePath, false)) {
+            for (int i = 0; i < lines.size(); i++) {
+                fw.write(lines.get(i));
+                if (i < lines.size() -1 ) {
+                    fw.write(System.lineSeparator());
+                } else if (!lines.get(i).endsWith(System.lineSeparator()) && !lines.get(i).isEmpty()){
+                }
+            }
+        }
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, false))) {
             for (String line : lines) {
-                fw.write(line);
-                fw.write(System.lineSeparator());
+                bw.write(line);
+                bw.newLine();
             }
         }
     }
 
+
     private static int getNextIdNumber(List<String> allPrHeaders) {
-        int nextIdNumber = 1;
-        if (allPrHeaders != null && !allPrHeaders.isEmpty()) {
-            int maxId = 0;
-            for (String line : allPrHeaders) {
-                String[] parts = line.split(",");
-                if (parts.length > 0 && parts[0].startsWith("PR")) {
-                    try {
-                        maxId = Math.max(maxId, Integer.parseInt(parts[0].substring(2)));
-                    } catch (NumberFormatException e) { /* ignore malformed IDs */ }
-                }
-            }
-            nextIdNumber = maxId + 1;
+        if (allPrHeaders == null || allPrHeaders.isEmpty()) {
+            return 1;
         }
-        return nextIdNumber;
+        int maxId = 0;
+        for (String line : allPrHeaders) {
+            if (line == null || line.trim().isEmpty()) continue;
+            String[] parts = line.split(",", -1);
+            if (parts.length > 0 && parts[0].startsWith("PR")) {
+                try {
+                    maxId = Math.max(maxId, Integer.parseInt(parts[0].substring(2)));
+                } catch (NumberFormatException e) { /* ignore malformed IDs */ }
+            }
+        }
+        return maxId + 1;
     }
 
     @Override
@@ -75,49 +94,62 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
 
         try {
             // 1. PR Header
+            new FileController(this.filePath);
             String headerData = purchaseRequisition.toCSV();
-            appendLineToFile(PR_HEADER_FILE_PATH, headerData);
+            appendLineToFile(this.filePath, headerData);
             System.out.println("PR Header added: " + purchaseRequisition.getPrId());
 
             // 2. PR Items
             if (purchaseRequisition.getItems() != null) {
                 for (PurchaseRequisitionItem item : purchaseRequisition.getItems()) {
+                    if (item == null) continue;
                     item.setPrId(purchaseRequisition.getPrId());
                     appendLineToFile(PR_ITEMS_FILE_PATH, item.toCSV());
                 }
                 System.out.println(purchaseRequisition.getItems().size() + " item(s) added for PR: " + purchaseRequisition.getPrId());
             }
-        } catch (Exception e) {
-            System.out.println("Error adding purchase requisition (ID: " + purchaseRequisition.getPrId() + ") to file: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Error adding purchase requisition (ID: " + purchaseRequisition.getPrId() + ") to file: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    public PurchaseRequisition createNewPurchaseRequisition(String notes, String supplierId, int status,
+    public PurchaseRequisition createNewPurchaseRequisition(String notes, int status,
                                                             List<PurchaseRequisitionItem> itemsData) {
         String prId;
         try {
-            List<String> allPrHeaders = super.getAll(PR_HEADER_FILE_PATH);
+            List<String> allPrHeaders = getAll();
             int nextIdNumber = getNextIdNumber(allPrHeaders);
             prId = "PR" + String.format("%03d", nextIdNumber);
         } catch (Exception e) {
             System.err.println("Error generating PR ID: " + e.getMessage());
-            throw new RuntimeException("Could not generate PR ID", e);
+            throw new RuntimeException("Could not generate PR ID", e); // Or return null
         }
 
         String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         String createdBy = SessionController.getInstance().getUserId();
+        if (createdBy == null) createdBy = "system";
 
         PurchaseRequisition newPR = new PurchaseRequisition(
-                prId, notes, supplierId, status,
+                prId, notes, status,
                 createdAt, createdBy, createdAt, createdBy
         );
 
         if (itemsData != null) {
-            for (PurchaseRequisitionItem item : itemsData) {
-                newPR.addItem(new PurchaseRequisitionItem(null, item.getItemId(), item.getItemCode(), item.getItemName(), item.getQuantity(), item.getPrice()));
+            for (PurchaseRequisitionItem itemDto : itemsData) {
+                if (itemDto == null) continue;
+                newPR.addItem(new PurchaseRequisitionItem(
+                        null, // PR ID will be set by newPR.addItem()
+                        itemDto.getItemId(),
+                        itemDto.getItemCode(),
+                        itemDto.getItemName(),
+                        itemDto.getQuantity(),
+                        itemDto.getPrice(), // Assuming price is already in correct unit (e.g., cents)
+                        itemDto.getSuggestedSupplierIds() // Pass the list
+                ));
             }
         }
-        add(newPR);
+        add(newPR); // Calls the overridden add method
         System.out.println("New Purchase Requisition " + prId + " created successfully with " + newPR.getItems().size() + " items.");
         return newPR;
     }
@@ -128,46 +160,44 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
             throw new IllegalArgumentException("Purchase Requisition or its ID cannot be null for update operation.");
         }
         try {
-            // 1. PR Header
-            super.fileController.updateFile(purchaseRequisition.toCSV());
+            // 1. Update PR Header
+            // The toCSV() in PurchaseRequisition model is updated (no supplierId)
+            new FileController(this.filePath); // Ensure correct static path for super.fileController operations
+            super.fileController.updateFile(purchaseRequisition.toCSV()); // Assuming ID is at index 0
             System.out.println("PR Header updated: " + purchaseRequisition.getPrId());
 
-            // 2. PR Items
-            List<String> itemsToKeep = getItemsToKeep(purchaseRequisition);
-            overwriteFileWithLines(itemsToKeep);
-            System.out.println("Old items processed for PR: " + purchaseRequisition.getPrId());
-
+            // 2. Update PR Items: Delete all old items for this PR and add new ones
+            List<String> allCurrentItemLines = readAllLinesFromFile(PR_ITEMS_FILE_PATH);
+            List<String> itemsToKeep = new ArrayList<>();
+            if (allCurrentItemLines != null) {
+                for (String itemLine : allCurrentItemLines) {
+                    String[] parts = itemLine.split(",", -1);
+                    if (parts.length > 0 && !parts[0].equals(purchaseRequisition.getPrId())) {
+                        itemsToKeep.add(itemLine); // Keep items from other PRs
+                    }
+                }
+            }
+            // Add the updated items for the current PR
             if (purchaseRequisition.getItems() != null) {
                 for (PurchaseRequisitionItem item : purchaseRequisition.getItems()) {
-                    item.setPrId(purchaseRequisition.getPrId());
-                    appendLineToFile(PR_ITEMS_FILE_PATH, item.toCSV());
+                    if (item == null) continue;
+                    item.setPrId(purchaseRequisition.getPrId()); // Ensure PR ID
+                    itemsToKeep.add(item.toCSV()); // Add updated/new items
                 }
-                System.out.println(purchaseRequisition.getItems().size() + " new/updated item(s) added for PR: " + purchaseRequisition.getPrId());
             }
+            overwriteFileWithLines(PR_ITEMS_FILE_PATH, itemsToKeep);
+            System.out.println("Items updated for PR: " + purchaseRequisition.getPrId());
 
-
-            System.out.println("Purchase requisition updated successfully");
-        } catch (Exception e) {
+        } catch (IOException e) { // Changed from Exception to IOException
             System.err.println("Error updating full purchase requisition (ID: " + purchaseRequisition.getPrId() + ") in file: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private List<String> getItemsToKeep(PurchaseRequisition purchaseRequisition) {
-        List<String> allItemLines = super.getAll(PR_ITEMS_FILE_PATH);
-        List<String> itemsToKeep = new ArrayList<>();
-        if (allItemLines != null) {
-            for (String itemLine : allItemLines) {
-                String[] parts = itemLine.split(",");
-                if (parts.length > 0 && !parts[0].equals(purchaseRequisition.getPrId())) {
-                    itemsToKeep.add(itemLine);
-                }
-            }
-        }
-        return itemsToKeep;
-    }
-
-    public void updatePurchaseRequisition(String prId, String notes, String supplierId, int status,
+    // supplierId parameter removed
+    public void updatePurchaseRequisition(String prId, String notes, int status,
                                           List<PurchaseRequisitionItem> itemsData) {
+        // getPurchaseRequisitionHeaderById uses PurchaseRequisition.fromHeaderCSV (updated)
         PurchaseRequisition existingPRHeader = getPurchaseRequisitionHeaderById(prId);
         if (existingPRHeader == null) {
             throw new IllegalArgumentException("Purchase Requisition ID " + prId + " not found for update.");
@@ -175,34 +205,48 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
 
         String updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         String updatedBy = SessionController.getInstance().getUserId();
+        if (updatedBy == null) updatedBy = "system";
 
+        // Create updated PR object without supplierId
         PurchaseRequisition updatedPR = new PurchaseRequisition(
-                prId, notes, supplierId, status,
+                prId, notes, status,
                 existingPRHeader.getCreatedAt(), existingPRHeader.getCreatedBy(),
                 updatedAt, updatedBy
         );
 
         if (itemsData != null) {
             for (PurchaseRequisitionItem itemDto : itemsData) {
-                updatedPR.addItem(new PurchaseRequisitionItem(prId, itemDto.getItemId(), itemDto.getItemCode(), itemDto.getItemName(), itemDto.getQuantity(), itemDto.getPrice()));
+                if (itemDto == null) continue;
+                // The itemDto from AddPurchaseRequisitionForm should have its suggestedSupplierIds
+                updatedPR.addItem(new PurchaseRequisitionItem(
+                        null, // PR ID set by updatedPR.addItem()
+                        itemDto.getItemId(), itemDto.getItemCode(), itemDto.getItemName(),
+                        itemDto.getQuantity(), itemDto.getPrice(),
+                        itemDto.getSuggestedSupplierIds() // Pass the list
+                ));
             }
         }
-        update(updatedPR);
+        update(updatedPR); // Calls the overridden update method
         System.out.println("Purchase Requisition " + prId + " updated successfully.");
     }
 
     public PurchaseRequisition getPurchaseRequisitionHeaderById(String prId) {
-        try {
-            new FileController(PR_HEADER_FILE_PATH);
-            String[] headerParts = super.fileController.getLine(0, prId);
-            if (headerParts != null) {
-                return PurchaseRequisition.fromHeaderCSV(String.join(",", headerParts));
-            }
-        } catch (IOException e) {
-            System.err.println("Error reading PR header for ID " + prId + ": " + e.getMessage());
+        // This method calls super.getOneWithId(), which uses PurchaseRequisition.fromHeaderCSV().
+        // PurchaseRequisition.fromHeaderCSV() is already updated for 7 fields.
+        String headerLine = super.getOneWithId(prId); // Relies on CRUDController.getOneWithId path setting
+        if (headerLine != null) {
+            return PurchaseRequisition.fromHeaderCSV(headerLine);
         }
         return null;
     }
+
+    private List<String> readAllLinesFromFile(String filePath) throws IOException {
+        // This helper method is used to read item lines.
+        // It needs to use the static FileController carefully.
+        new FileController(filePath); // Set static path for the target file
+        return FileController.getFile(); // Use static method
+    }
+
 
     public PurchaseRequisition getFullPurchaseRequisitionById(String prId) {
         PurchaseRequisition prHeader = getPurchaseRequisitionHeaderById(prId);
@@ -212,11 +256,14 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
 
         List<PurchaseRequisitionItem> prItems = new ArrayList<>();
         try {
-            List<String> itemLines = super.getAll(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = readAllLinesFromFile(PR_ITEMS_FILE_PATH); // Uses helper that sets path
             if (itemLines != null) {
                 for (String line : itemLines) {
-                    String[] parts = line.split(",");
+                    if (line == null || line.trim().isEmpty()) continue;
+                    String[] parts = line.split(",", -1);
+                    // Check if the item line belongs to the current PR
                     if (parts.length > 0 && parts[0].equals(prId)) {
+                        // PurchaseRequisitionItem.fromCSV() is already updated for 8 fields
                         PurchaseRequisitionItem item = PurchaseRequisitionItem.fromCSV(line);
                         if (item != null) {
                             prItems.add(item);
@@ -224,53 +271,62 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) { // Changed from Exception
             System.err.println("Error reading PR items for PR ID " + prId + ": " + e.getMessage());
+            e.printStackTrace();
         }
         prHeader.setItems(prItems);
         return prHeader;
     }
 
     public List<PurchaseRequisition> getAllPurchaseRequisitionHeaders() {
+        // super.getAll() already calls new FileController(this.filePath)
+        List<String> lines = super.getAll(); // Reads PR_HEADER_FILE_PATH
         List<PurchaseRequisition> prHeaders = new ArrayList<>();
-        try {
-            List<String> lines = super.getAll(PR_HEADER_FILE_PATH);
-            if (lines != null) {
-                for (String line : lines) {
-                    PurchaseRequisition pr = PurchaseRequisition.fromHeaderCSV(line);
-                    if (pr != null) {
-                        prHeaders.add(pr);
-                    }
+        if (lines != null) {
+            for (String line : lines) {
+                if (line == null || line.trim().isEmpty()) continue;
+                // PurchaseRequisition.fromHeaderCSV() is updated
+                PurchaseRequisition pr = PurchaseRequisition.fromHeaderCSV(line);
+                if (pr != null) {
+                    prHeaders.add(pr);
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Error reading all PR headers: " + e.getMessage());
         }
         return prHeaders;
     }
 
     public List<PurchaseRequisition> getAllFullPurchaseRequisitions() {
-        List<PurchaseRequisition> fullPRs = new ArrayList<>();
         List<PurchaseRequisition> prHeaders = getAllPurchaseRequisitionHeaders();
+        List<PurchaseRequisition> fullPRs = new ArrayList<>();
 
+        // Efficiently read all item lines once
         Map<String, List<PurchaseRequisitionItem>> allItemsMap = new HashMap<>();
         try {
-            List<String> itemLines = super.getAll(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = readAllLinesFromFile(PR_ITEMS_FILE_PATH); // Uses helper that sets path
             if (itemLines != null) {
                 for (String line : itemLines) {
+                    if (line == null || line.trim().isEmpty()) continue;
+                    // PurchaseRequisitionItem.fromCSV() is updated
                     PurchaseRequisitionItem item = PurchaseRequisitionItem.fromCSV(line);
                     if (item != null && item.getPrId() != null) {
-                        allItemsMap.computeIfAbsent(item.getPrId(), _ -> new ArrayList<>()).add(item);
+                        allItemsMap.computeIfAbsent(item.getPrId(), k -> new ArrayList<>()).add(item);
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) { // Changed from Exception
             System.err.println("Error reading all PR items: " + e.getMessage());
+            e.printStackTrace();
         }
 
         for (PurchaseRequisition header : prHeaders) {
-            header.setItems(allItemsMap.getOrDefault(header.getPrId(), new ArrayList<>()));
-            fullPRs.add(header);
+            if (header == null) continue;
+            // It's better to create a new PR object for full PRs to avoid modifying the header objects from the list
+            PurchaseRequisition fullPR = PurchaseRequisition.fromHeaderCSV(header.toCSV()); // Re-parse to get a fresh object
+            if (fullPR != null) {
+                fullPR.setItems(allItemsMap.getOrDefault(header.getPrId(), new ArrayList<>()));
+                fullPRs.add(fullPR);
+            }
         }
         return fullPRs;
     }
@@ -281,38 +337,36 @@ public class PurchaseRequisitionController extends CRUDController<PurchaseRequis
             throw new IllegalArgumentException("PR ID cannot be null or empty for delete operation.");
         }
         try {
-            // 1. Delete PR Header
-            new FileController(PR_HEADER_FILE_PATH);
-            super.fileController.deleteLine(prId, 0);
+            // 1. Delete PR Header using CRUDController's delete, which sets its own path
+            super.delete(prId); // Deletes from PR_HEADER_FILE_PATH
 
-            // 2. Delete PR Items
-            List<String> allItemLines = super.getAll(PR_ITEMS_FILE_PATH);
+            // 2. Delete associated PR Items from PR_ITEMS_FILE_PATH
+            List<String> allItemLines = readAllLinesFromFile(PR_ITEMS_FILE_PATH); // Helper sets path
             List<String> itemsToKeep = new ArrayList<>();
             boolean itemsModified = false;
             if (allItemLines != null) {
                 for (String itemLine : allItemLines) {
-                    String[] parts = itemLine.split(",");
+                    if (itemLine == null || itemLine.trim().isEmpty()) continue;
+                    String[] parts = itemLine.split(",", -1);
                     if (parts.length > 0 && parts[0].equals(prId)) {
-                        itemsModified = true;
+                        itemsModified = true; // This line is for the PR being deleted
                     } else {
-                        itemsToKeep.add(itemLine);
+                        itemsToKeep.add(itemLine); // Keep lines from other PRs
                     }
                 }
             }
 
             if (itemsModified) {
-                overwriteFileWithLines(itemsToKeep);
+                overwriteFileWithLines(PR_ITEMS_FILE_PATH, itemsToKeep);
                 System.out.println("Items associated with PR " + prId + " deleted.");
             } else {
                 System.out.println("No items found for PR " + prId + " or no changes needed to items file.");
             }
 
-        } catch (IOException e) {
+        } catch (IOException e) { // Changed from generic Exception
             System.err.println("Error deleting purchase requisition (ID: " + prId + "): " + e.getMessage());
-            throw new RuntimeException("Failed to delete purchase requisition: " + prId, e);
-        } catch (Exception e) {
-            System.err.println("Unexpected error during deletion of PR (ID: " + prId + "): " + e.getMessage());
-            throw new RuntimeException("Failed to delete purchase requisition: " + prId, e);
+            e.printStackTrace();
+            // Consider re-throwing as a custom runtime exception or handling more gracefully
         }
     }
 }

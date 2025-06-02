@@ -1,16 +1,25 @@
 package util.table.mappers;
 
+import controller.ItemSupplierController;
 import util.table.RowDataMapper;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ItemRowMapper implements RowDataMapper {
     // Sample item data: IM001,Seeder Item A,1,kg,SUP001,2025-04-24 17:00:59,2025-04-24 17:00:59,sales1,sales1
-    private static final int EXPECTED_DATA_FIELDS = 10;
+    private static final int EXPECTED_ITEM_DETAIL_FIELDS = 9;
+    private final ItemSupplierController itemSupplierController;
+
+    public ItemRowMapper(ItemSupplierController itemSupplierController) {
+        this.itemSupplierController = itemSupplierController;
+    }
 
     @Override
     public Object[] mapFieldsToRow(String[] fields, int expectedColumnCount) {
-        if (fields.length < EXPECTED_DATA_FIELDS) {
-            System.err.println("ItemMapper: Skipping malformed line (expected at least " +
-                    EXPECTED_DATA_FIELDS + " fields, got " + fields.length + "): " + String.join(",", fields));
+        if (fields.length < EXPECTED_ITEM_DETAIL_FIELDS) { // Check against 9
+            System.err.println("ItemRowMapper: Skipping malformed line from item_details.txt (expected at least " +
+                    EXPECTED_ITEM_DETAIL_FIELDS + " fields, got " + fields.length + "): " + String.join(",", fields));
             return null;
         }
 
@@ -26,14 +35,27 @@ public class ItemRowMapper implements RowDataMapper {
             rowData[4] = fields[4];
             System.err.println("ItemMapper: Could not parse price for " + fields[0] + ". Value: " + fields[3]);
         }
-        rowData[5] = fields[5];  // Supplier ID
-        rowData[6] = fields[6];  // Created At
-        rowData[7] = fields[8];  // Created By
-        rowData[8] = fields[7];  // Updated At
-        rowData[9] = fields[9];  // Updated By
+        String itemId = fields[0];
+        if (this.itemSupplierController != null) {
+            List<String> supplierIds = this.itemSupplierController.getSupplierIdsForItem(itemId);
+            if (supplierIds != null && !supplierIds.isEmpty()) {
+                rowData[5] = supplierIds.stream().collect(Collectors.joining(", "));
+            } else {
+                rowData[5] = "N/A";
+            }
+        } else {
+            rowData[5] = "Error: ISC not init";
+            System.err.println("ItemRowMapper: ItemSupplierController is null for item " + itemId);
+        }
+        rowData[6] = fields[5];  // Created At
+        rowData[7] = fields[7];  // Created By
+        rowData[8] = fields[6];  // Updated At
+        rowData[9] = fields[8];  // Updated By
 
-        for (int i = EXPECTED_DATA_FIELDS; i < expectedColumnCount; i++) {
-            rowData[i] = "";
+        if (expectedColumnCount > 10) {
+            for (int i = 10; i < expectedColumnCount; i++) {
+                rowData[i] = "";
+            }
         }
         return rowData;
     }

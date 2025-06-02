@@ -15,23 +15,12 @@ public class PurchaseRequisitionItemSeeder {
             BufferedWriter writer = new BufferedWriter(new FileWriter(PR_ITEMS_FILE, false)); // false to overwrite
 
             // Items for PR001
-            writer.write("PR001,ITM001,LAP001,HP EliteBook G10 Laptop,2,1200,2400\n");
-            writer.write("PR001,ITM002,MSE001,Logitech MX Master 3S Mouse,2,90,180\n");
-            writer.write("PR001,ITM005,KBD002,Mechanical Keyboard Keychron K2,1,150,150\n");
-
-            // Items for PR002
-            writer.write("PR002,ITM003,MON001,Dell 27 inch 4K Monitor,1,350,350\n");
-
-            // Items for PR003
-            writer.write("PR003,ITM004,SSD001,Samsung 1TB NVMe SSD,5,80,400\n");
-            writer.write("PR003,ITM002,MSE001,Logitech MX Master 3S Mouse,3,90,270\n");
-
-            // Items for PR004 (rejected)
-            writer.write("PR004,ITM006,RAM001,Corsair Vengeance LPX 16GB DDR4 RAM,2,60,120\n");
-
-            // Items for PR005
-            writer.write("PR005,ITM001,LAP001,HP EliteBook G10 Laptop,1,1200,1200\n");
-
+            writer.write("PR001,IM001,LAP001,HP EliteBook G10,5,125000,625000,SUP001;SUP004\n" +
+                    "PR001,IM002,MSE001,Logitech MX Master 3S,10,9550,95500,SUP001;SUP002\n" +
+                    "PR002,IM003,MON001,Dell UltraSharp 27 4K,8,45000,360000,SUP001\n" +
+                    "PR002,IM004,SSD001,Samsung 1TB NVMe SSD,20,8500,170000,SUP001;SUP003\n" +
+                    "PR003,IM005,KBD002,Keychron K2 Mechanical Keyboard,15,16075,241125,SUP002\n" +
+                    "PR003,IM002,MSE001,Logitech MX Master 3S,5,9550,47750,SUP001;SUP002");
 
             System.out.println("Successfully seeded data to " + PR_ITEMS_FILE);
             writer.close();

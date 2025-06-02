@@ -202,7 +202,7 @@ public class PurchaseManagerController {
                     poID, date, requisition, itemName, qty, supplierName, status, requestDept, approvalDept
             );
 
-            bw.write(line);
+        bw.write(line);
             bw.newLine();
             return true;
 

@@ -1,7 +1,5 @@
-SUP001,Supplier Company A,Seeder PIC A,Seeder Description A,Seeder Address A,+6008123456789,example@email.com,0,2025-05-23 00:59:46,2025-05-23 13:55:31,sales1,SM001
-SUP002,Seeder Supplier B,Seeder PIC B,Seeder Description B,Seeder Address B,08123456789,example@email.com,0,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
-SUP003,Seeder Supplier C,Seeder PIC C,Seeder Description C,Seeder Address C,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
-SUP004,Seeder Supplier D,Seeder PIC D,Seeder Description D,Seeder Address D,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
-SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,example@email.com,1,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
-SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,example@email.com,2,2025-05-23 00:59:46,2025-05-23 00:59:46,sales1,sales1
-SUP007,Supplier Company C,Supplier PIC,Supplier Description,Address,+600123456789,user@example.com,0,2025-05-23 01:47:56,2025-05-23 21:01:59,SM001,SM001
+SUP001,TechGlobal Solutions,Alice Wonderland,Leading IT equipment distributor,123 Silicon Rd Tech City,15550100,sales@techglobal.com,1,2025-05-28 23:56:21,2025-05-28 23:56:21,sales1,sales1
+SUP002,Office Supplies Co.,Bob The Builder,Wholesale office stationery and peripherals,456 Paper St Commerce Town,442079460011,contact@officesupplies.co,1,2025-05-28 23:56:21,2025-05-28 23:56:21,sales1,sales1
+SUP003,Component Kings,Charlie Brown,Specialists in PC components and RAM,789 Circuit Ave Electra,61298765432,info@componentkings.au,0,2025-05-28 23:56:21,2025-05-28 23:56:21,sales1,sales1
+SUP004,Gadget Galaxy,Diana Prince,Consumer electronics and gadgets,101 Future Dr Innovation Hub,15550102,support@gadgetgalaxy.com,1,2025-05-28 23:56:21,2025-05-28 23:56:21,sales1,sales1
+SUP005,PrintPerfect Ltd.,Edward Scissorhands,Printers & ink & printing consumables,222 Toner Tce Printville,4930123456,orders@printperfect.de,2,2025-05-28 23:56:21,2025-05-28 23:56:21,sales1,sales1

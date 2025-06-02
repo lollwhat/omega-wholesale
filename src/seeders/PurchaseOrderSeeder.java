@@ -22,11 +22,10 @@ public class PurchaseOrderSeeder {
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(PO_HEADER_FILE, false));
 
-            writer.write("PO001,PR001,Cancelled due to budget constraints,SUP001,2,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
-            writer.write("PO002,PR002,Urgent delivery received,SUP001,1,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
-            writer.write("PO003,PR003,Standard order,SUP002,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
-            writer.write("PO004,PR005,Items for project Alpha,SUP001,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
-            writer.write("PO005,PR004,Items for project Beta,SUP002,0,"+currentTime+",system_seeder,"+currentTime+",system_seeder,null,null\n");
+            writer.write("PO001,PR001,Standard order from PR001,1,2025-05-30 09:00:00,PM001,2025-05-30 09:05:00,PM001,,\n" +
+                    "PO002,PR002,Order fulfilled for PR002,2,2025-05-30 09:10:00,PM001,2025-05-31 10:00:00,FM001,2025-05-31 10:00:00,FM001\n" +
+                    "PO003,PR003,Items for new office setup from PR003,0,2025-05-30 09:15:00,PM001,2025-05-30 09:15:00,PM001,,\n" +
+                    "PO004,PR001,Partial order for Laptops - PR001,0,2025-05-30 09:20:00,PM001,2025-05-30 09:20:00,PM001,,");
 
 
             System.out.println("Successfully seeded data to " + PO_HEADER_FILE);

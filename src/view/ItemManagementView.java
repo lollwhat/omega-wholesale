@@ -13,6 +13,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ItemManagementView extends JFrame {
     private final Color darkBlue = UITheme.DARK_BLUE;
@@ -26,26 +27,27 @@ public class ItemManagementView extends JFrame {
     private JTable table;
     private DefaultTableModel itemTableModel;
     private ItemController itemController;
+    private ItemSupplierController itemSupplierController = new ItemSupplierController();
     private ItemRowMapper itemRowMapper;
     private final String[] itemColumnNames = { // Made this an instance variable
-            "Item Entry ID", "Item Code", "Name", "Unit", "Price", "Supplier ID",
+            "Item Entry ID", "Item Code", "Name", "Unit", "Price", "Suppliers",
             "Created At", "Created By", "Updated At", "Updated By", "Actions"
     };
+    private final String[] itemViewColumnNames = { // Made this an instance variable
+            "Item Entry ID", "Item Code", "Name", "Unit", "Price", "Suppliers",
+            "Created At", "Created By", "Updated At", "Updated By"
+    };
 
-    // Constructor (if ItemManagementView is the main frame)
     public ItemManagementView() {
         setTitle("Item Management Application"); // Example title
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Example close operation
-        // Initialize controllers and mappers here
         itemController = new ItemController();
-        itemRowMapper = new ItemRowMapper();
+        itemRowMapper = new ItemRowMapper(itemSupplierController);
 
-        // Add the main panel created by createItemManagementPanel
         add(createItemManagementPanel());
 
         pack(); // Adjust frame size to components
         setLocationRelativeTo(null); // Center on screen
-        // setVisible(true); // You might set this from where ItemManagementView is created
     }
 
 
@@ -55,7 +57,7 @@ public class ItemManagementView extends JFrame {
             itemController = new ItemController();
         }
         if (itemRowMapper == null) {
-            itemRowMapper = new ItemRowMapper();
+            itemRowMapper = new ItemRowMapper(itemSupplierController);
         }
 
         JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
@@ -99,31 +101,58 @@ public class ItemManagementView extends JFrame {
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // Initial data load
+        refreshTable();
+
+        return mainPanel;
+    }
+
+    public JPanel createViewItemPanel(){
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(mediumBlue);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Header with title and Add New Item button
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(mediumBlue);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel titleLabel = new JLabel("View Item");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(highlightBlue);
+
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(mediumBlue);
+        titlePanel.add(titleLabel);
+        headerPanel.add(titlePanel, BorderLayout.NORTH);
+
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(darkBlue);
+        tablePanel.add(createViewOnlyTable(), BorderLayout.CENTER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
         refreshTable();
 
         return mainPanel;
     }
 
     private void showAddItemForm() {
-        AddItemForm addItemForm = new AddItemForm(this); // 'this' is the ItemManagementView instance
+        AddItemForm addItemForm = new AddItemForm(this);
         addItemForm.setVisible(true);
-        // refreshTable() will be called from AddItemForm after successful save
     }
 
     private void showEditItemForm(String itemId) {
-        AddItemForm addItemForm = new AddItemForm(this, itemId); // 'this' is the ItemManagementView instance
+        AddItemForm addItemForm = new AddItemForm(this, itemId);
         addItemForm.setVisible(true);
-        // refreshTable() will be called from AddItemForm after successful save
     }
 
     public void refreshTable() {
         SwingUtilities.invokeLater(() -> {
             if (itemTableModel == null || itemController == null || itemRowMapper == null) {
                 System.err.println("ItemManagementView.refreshTable(): Key components not initialized.");
-                // Attempt to initialize if they are null and this is the first sensible time
                 if (itemController == null) itemController = new ItemController();
-                if (itemRowMapper == null) itemRowMapper = new ItemRowMapper();
+                if (itemRowMapper == null) itemRowMapper = new ItemRowMapper(itemSupplierController);
                 if (itemTableModel == null && table != null) { // If table exists, model should too
                     if (table.getModel() instanceof DefaultTableModel) {
                         itemTableModel = (DefaultTableModel) table.getModel();
@@ -193,7 +222,7 @@ public class ItemManagementView extends JFrame {
         table.getColumnModel().getColumn(2).setPreferredWidth(150); // Name (wider)
         table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Unit
         table.getColumnModel().getColumn(4).setPreferredWidth(100); // Price
-        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Supplier ID
+        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Suppliers
         table.getColumnModel().getColumn(6).setPreferredWidth(160); // Created At
         table.getColumnModel().getColumn(7).setPreferredWidth(100); // Created By
         table.getColumnModel().getColumn(8).setPreferredWidth(160); // Updated At
@@ -221,6 +250,66 @@ public class ItemManagementView extends JFrame {
                             if (itemId != null && !itemId.trim().isEmpty()) {
                                 showItemDetailsPopup(itemId, itemColumnNames);
                             }
+                        }
+                    }
+                }
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(this.table);
+        scrollPane.getViewport().setBackground(darkBlue);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        return scrollPane;
+    }
+
+    private JScrollPane createViewOnlyTable() {
+        List<String> rawItemData = itemController.getAll();
+
+        this.itemTableModel = GenericModelHelper.createGenericTableModel(
+                rawItemData,
+                this.itemViewColumnNames, // Use instance variable
+                this.itemRowMapper,   // Use instance variable
+                GenericModelHelper.NO_CELLS_EDITABLE
+        );
+
+        // Initialize the instance variable table
+        this.table = new JTable(this.itemTableModel);
+        table.setBackground(darkBlue);
+        table.setForeground(textWhite);
+        table.setGridColor(new Color(50, 60, 80));
+        table.setRowHeight(45);
+        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        table.getTableHeader().setBackground(new Color(150, 165, 235));
+        table.getTableHeader().setForeground(textWhite);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.setSelectionBackground(new Color(60, 70, 90));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Important for horizontal scrolling
+
+        // Set preferred column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(100); // Item Entry ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(100); // Item Code
+        table.getColumnModel().getColumn(2).setPreferredWidth(150); // Name (wider)
+        table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Unit
+        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Price
+        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Suppliers
+        table.getColumnModel().getColumn(6).setPreferredWidth(160); // Created At
+        table.getColumnModel().getColumn(7).setPreferredWidth(100); // Created By
+        table.getColumnModel().getColumn(8).setPreferredWidth(160); // Updated At
+        table.getColumnModel().getColumn(9).setPreferredWidth(100); // Updated By
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) { // Changed to single click for detail view
+                    int viewRow = table.rowAtPoint(e.getPoint());
+                    int viewColumn = table.columnAtPoint(e.getPoint());
+
+                    if (viewRow >= 0 && viewColumn >= 0) {// Check if not actions column
+                        int modelRow = table.convertRowIndexToModel(viewRow);
+                        String itemId = (String) table.getModel().getValueAt(modelRow, 0);
+                        if (itemId != null && !itemId.trim().isEmpty()) {
+                            showItemDetailsPopup(itemId, itemViewColumnNames);
                         }
                     }
                 }
@@ -266,15 +355,27 @@ public class ItemManagementView extends JFrame {
 
                 if (confirm == JOptionPane.YES_OPTION) {
                     try {
-                        // Use the ItemManagementView's instance of ItemController
+                        List<String> linkedSupplierIds = ItemManagementView.this.itemSupplierController.getSupplierIdsForItem(itemId);
                         ItemManagementView.this.itemController.delete(itemId);
 
-                        // Crucially, refresh the main table from the source of truth
+                        if (linkedSupplierIds != null && !linkedSupplierIds.isEmpty()) {
+                            System.out.println("ItemManagementView: Deleting " + linkedSupplierIds.size() + " supplier links for item " + itemId);
+                            for (String supplierIdToRemove : linkedSupplierIds) {
+                                ItemManagementView.this.itemSupplierController.removeLink(itemId, supplierIdToRemove);
+                            }
+                        } else {
+                            System.out.println("ItemManagementView: No supplier links found to delete for item " + itemId);
+                        }
+
                         ItemManagementView.this.refreshTable();
 
-                        JOptionPane.showMessageDialog(panel.getParent(),
-                                "Item with ID " + itemId + " deleted successfully.",
-                                "Success", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(
+                                SwingUtilities.getWindowAncestor(panel),
+                                "Item with ID " + itemId + " and its associated supplier links deleted successfully.",
+                                "Success",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(panel.getParent(),
                                 "Error deleting item: " + ex.getMessage(),
@@ -340,6 +441,7 @@ public class ItemManagementView extends JFrame {
     private void showItemDetailsPopup(String itemId, String[] allColumnNames) {
         // Ensure itemController is initialized
         if (this.itemController == null) this.itemController = new ItemController();
+        if (this.itemSupplierController == null) this.itemSupplierController = new ItemSupplierController();
 
         String itemDataString = this.itemController.getOneWithId(itemId);
 
@@ -348,7 +450,14 @@ public class ItemManagementView extends JFrame {
             return;
         }
 
-        String[] itemDetails = itemDataString.split(",");
+        String[] itemDetailsFromFile = itemDataString.split(","); // Raw data from item_details.txt
+
+        // Fetch supplier details separately
+        List<String> supplierIds = this.itemSupplierController.getSupplierIdsForItem(itemId);
+        String suppliersDisplayValue = "N/A";
+        if (supplierIds != null && !supplierIds.isEmpty()) {
+            suppliersDisplayValue = supplierIds.stream().collect(Collectors.joining(", "));
+        }
 
         JDialog detailDialog = new JDialog(this, "Item Details: " + itemId, true);
         detailDialog.setLayout(new BorderLayout(10, 10));
@@ -366,38 +475,51 @@ public class ItemManagementView extends JFrame {
         detailsContentPanel.setBackground(mediumBlue);
         detailsContentPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        for (int i = 0; i < allColumnNames.length; i++) {
-            if (allColumnNames[i].equals("Actions")) continue;
-            if (i < itemDetails.length) {
-                JLabel labelName = new JLabel(allColumnNames[i] + ":");
-                labelName.setForeground(textWhite);
-                labelName.setFont(new Font("Arial", Font.BOLD, 13));
-                detailsContentPanel.add(labelName);
-
-                if (allColumnNames[i].equals("Created By")) {
-                    JLabel labelValue = new JLabel(itemDetails[8].trim());
-                    labelValue.setForeground(verylightBlue);
-                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
-                    detailsContentPanel.add(labelValue);
-                } else if (allColumnNames[i].equals("Updated At")) {
-                    JLabel labelValue = new JLabel(itemDetails[7].trim());
-                    labelValue.setForeground(verylightBlue);
-                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
-                    detailsContentPanel.add(labelValue);
-                } else if (allColumnNames[i].equals("Updated By")) {
-                    JLabel labelValue = new JLabel(itemDetails[9].trim());
-                    labelValue.setForeground(verylightBlue);
-                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
-                    detailsContentPanel.add(labelValue);
-                } else {
-                    JLabel labelValue = new JLabel(itemDetails[i].trim());
-                    labelValue.setForeground(verylightBlue);
-                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
-                    detailsContentPanel.add(labelValue);
-                }
+        for (String colNameCurrentView : allColumnNames) {
+            if (colNameCurrentView.equals("Actions")) {
+                continue; // Skip the "Actions" column
             }
-        }
 
+            JLabel labelName = new JLabel(colNameCurrentView + ":");
+            labelName.setForeground(textWhite);
+            labelName.setFont(new Font("Arial", Font.BOLD, 13));
+            detailsContentPanel.add(labelName);
+
+            String valueToDisplay = "N/A"; // Default if data not found or mapping issue
+
+            // Map data based on the column name from ItemManagementView.itemColumnNames
+            if (colNameCurrentView.equals("Item Entry ID") && itemDetailsFromFile.length > 0) {
+                valueToDisplay = itemDetailsFromFile[0];
+            } else if (colNameCurrentView.equals("Item Code") && itemDetailsFromFile.length > 1) {
+                valueToDisplay = itemDetailsFromFile[1];
+            } else if (colNameCurrentView.equals("Name") && itemDetailsFromFile.length > 2) {
+                valueToDisplay = itemDetailsFromFile[2];
+            } else if (colNameCurrentView.equals("Unit") && itemDetailsFromFile.length > 3) {
+                valueToDisplay = itemDetailsFromFile[3];
+            } else if (colNameCurrentView.equals("Price") && itemDetailsFromFile.length > 4) {
+                try {
+                    // Format price to two decimal places
+                    valueToDisplay = String.format("%.2f", Double.parseDouble(itemDetailsFromFile[4]));
+                } catch (NumberFormatException e) {
+                    valueToDisplay = itemDetailsFromFile[4]; // Fallback to raw string if not a number
+                }
+            } else if (colNameCurrentView.equals("Suppliers")) {
+                valueToDisplay = suppliersDisplayValue; // Use the fetched and formatted supplier IDs
+            } else if (colNameCurrentView.equals("Created At") && itemDetailsFromFile.length > 5) {
+                valueToDisplay = itemDetailsFromFile[5];
+            } else if (colNameCurrentView.equals("Created By") && itemDetailsFromFile.length > 7) {
+                valueToDisplay = itemDetailsFromFile[7];
+            } else if (colNameCurrentView.equals("Updated At") && itemDetailsFromFile.length > 6) {
+                valueToDisplay = itemDetailsFromFile[6];
+            } else if (colNameCurrentView.equals("Updated By") && itemDetailsFromFile.length > 8) {
+                valueToDisplay = itemDetailsFromFile[8];
+            }
+
+            JLabel labelValue = new JLabel(valueToDisplay.trim());
+            labelValue.setForeground(verylightBlue);
+            labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+            detailsContentPanel.add(labelValue);
+        }
         JScrollPane detailScrollPane = new JScrollPane(detailsContentPanel);
         detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
         detailScrollPane.getViewport().setBackground(mediumBlue);
@@ -421,13 +543,5 @@ public class ItemManagementView extends JFrame {
         detailDialog.pack();
         detailDialog.setLocationRelativeTo(this);
         detailDialog.setVisible(true);
-    }
-
-    // Main method for standalone testing (optional)
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            ItemManagementView view = new ItemManagementView();
-            view.setVisible(true);
-        });
     }
 }

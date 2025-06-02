@@ -7,7 +7,7 @@ import java.util.Date;
 
 
 public class SupplierSeeder {
-    private String itemDetailsFile = "data/supplier_details.txt";
+    private String supplierDetailsFile = "data/supplier_details.txt";
     private String createdAt;
 
     public SupplierSeeder() {
@@ -17,16 +17,21 @@ public class SupplierSeeder {
     public void seeding() {
         this.createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(itemDetailsFile, false));
-            writer.write("SUP001,Seeder Supplier A,Seeder PIC A,Seeder Description A,Seeder Address A,08123456789,example@email.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
-            writer.write("SUP002,Seeder Supplier B,Seeder PIC B,Seeder Description B,Seeder Address B,08123456789,example@email.com,"+0+","+createdAt+","+createdAt+",sales1,sales1\n");
-            writer.write("SUP003,Seeder Supplier C,Seeder PIC C,Seeder Description C,Seeder Address C,08123456789,example@email.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
-            writer.write("SUP004,Seeder Supplier D,Seeder PIC D,Seeder Description D,Seeder Address D,08123456789,example@email.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
-            writer.write("SUP005,Seeder Supplier E,Seeder PIC E,Seeder Description E,Seeder Address E,08123456789,example@email.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(supplierDetailsFile, false));
+            writer.write("SUP001,TechGlobal Solutions,Alice Wonderland,Leading IT equipment distributor,123 Silicon Rd Tech City,15550100,sales@techglobal.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
+            writer.write("SUP002,Office Supplies Co.,Bob The Builder,Wholesale office stationery and peripherals,456 Paper St Commerce Town,442079460011,contact@officesupplies.co,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
+            writer.write("SUP003,Component Kings,Charlie Brown,Specialists in PC components and RAM,789 Circuit Ave Electra,61298765432,info@componentkings.au,"+0+","+createdAt+","+createdAt+",sales1,sales1\n");
+            writer.write("SUP004,Gadget Galaxy,Diana Prince,Consumer electronics and gadgets,101 Future Dr Innovation Hub,15550102,support@gadgetgalaxy.com,"+1+","+createdAt+","+createdAt+",sales1,sales1\n");
+            writer.write("SUP005,PrintPerfect Ltd.,Edward Scissorhands,Printers & ink & printing consumables,222 Toner Tce Printville,4930123456,orders@printperfect.de,"+2+","+createdAt+","+createdAt+",sales1,sales1\n");
             System.out.println("Successfully Seeded data to supplier_details.txt");
             writer.close();
         } catch (Exception e) {
             System.out.println("Error seeding data: " + e.getMessage());
         }
+    }
+
+    public static void main(String[] args) {
+        SupplierSeeder seeder = new SupplierSeeder();
+        seeder.seeding();
     }
 }

@@ -252,8 +252,6 @@ public class DailySalesEntryView extends JFrame {
             panel.setOpaque(true); // Ensure background color is painted
 
             editButton = createActionButton("Edit", e -> {
-                // `fireEditingStopped` is important for the table to commit any pending edits
-                // and for the editor to be properly dismissed before opening a dialog.
                 fireEditingStopped();
                 String salesEntryId = (String) containingTable.getValueAt(currentRow, 0);
                 showEditDailySalesForm(salesEntryId);
@@ -339,7 +337,6 @@ public class DailySalesEntryView extends JFrame {
     }
 
     private void showDailySalesDetailsPopup(String dailySalesId, String[] allColumnNames) {
-        // Ensure dailySalesEntryController is initialized
         if (this.dailySalesEntryController == null) this.dailySalesEntryController = new DailySalesEntryController();
 
         String dailySalesEntryDataString = this.dailySalesEntryController.getOneWithId(dailySalesId);

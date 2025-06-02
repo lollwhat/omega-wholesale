@@ -136,7 +136,6 @@ public class FinancePurchaseRequisitionView extends JFrame {
                 Object[] rowData = {
                         requisition.getPrId(),
                         requisition.getNotes(),
-                        requisition.getSupplierId(),
                         requisition.getStatus(),
                         requisition.getCreatedAt(),
                         requisition.getCreatedBy(),
@@ -181,7 +180,6 @@ public class FinancePurchaseRequisitionView extends JFrame {
                 new Font("Arial", Font.BOLD, 16), textColour));
 
         addDetailRow(headerPanel, "PR ID:", purchaseRequisition.getPrId());
-        addDetailRow(headerPanel, "Supplier ID:", purchaseRequisition.getSupplierId());
         addDetailRow(headerPanel, "Status:", String.valueOf(purchaseRequisition.getStatus()));
         addDetailRow(headerPanel, "Notes:", purchaseRequisition.getNotes());
         addDetailRow(headerPanel, "Created At:", purchaseRequisition.getCreatedAt());

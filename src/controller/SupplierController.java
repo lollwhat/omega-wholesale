@@ -13,8 +13,25 @@ public class SupplierController extends CRUDController<Supplier> {
         super("data/supplier_details.txt", EntityType.ITEM);
     }
 
+    public String getOneByCompanyName(String supplierCompany) {
+        new FileController("data/supplier_details.txt");
+        try {
+            String[] details = fileController.getLine(1, supplierCompany);
+            if (details != null) {
+                return String.join(",", details);
+            } else {
+                System.out.println("Supplier not found");
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading the supplier from file: " + e.getMessage());
+            return null;
+        }
+    }
+
     @Override
     public void add(Supplier supplier) {
+        new FileController("data/supplier_details.txt");
         try {
             String data = supplier.toCSV();
             FileController.appendFile(data);
@@ -35,6 +52,7 @@ public class SupplierController extends CRUDController<Supplier> {
 
     @Override
     public void update(Supplier supplier) {
+        new FileController("data/supplier_details.txt");
         try {
             String data = supplier.toCSV();
             fileController.updateFile(data); // assuming it replaces line by ID
@@ -65,22 +83,6 @@ public class SupplierController extends CRUDController<Supplier> {
             update(supplier);
         } catch (IOException e) {
             System.out.println("Error updating supplier in file: " + e.getMessage());
-        }
-
-    }
-
-    public String getOneByCompanyName(String supplierName) {
-        try {
-            String[] details = fileController.getLine(1, supplierName);
-            if (details != null) {
-                return String.join(",", details);
-            } else {
-                System.out.println("Supplier not found");
-                return null;
-            }
-        } catch (Exception e) {
-            System.err.println("Error reading the supplier from file: " + e.getMessage());
-            return null;
         }
     }
 }

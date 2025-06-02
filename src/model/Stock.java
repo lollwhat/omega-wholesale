@@ -2,6 +2,7 @@ package model;
 
 public class Stock {
     private String id;
+    private String itemCode;
     private String name;
     private int currentStock;
     private int minStock;
@@ -9,7 +10,7 @@ public class Stock {
     private String status;
     private String lastUpdateDate;
 
-    public Stock(String id, String name, int currentStock, int minStock, int maxStock, String status,
+    public Stock(String id, String itemCode, String name, int currentStock, int minStock, int maxStock, String status,
                  String lastUpdateDate) {
         this.id = id;
         this.name = name;
@@ -22,6 +23,9 @@ public class Stock {
 
     public String getId() {return id;};
     public void setId(String id) {this.id = id;};
+
+    public String getItemCode() {return itemCode;};
+    public void setItemCode(String itemCode) {this.itemCode = itemCode;};
 
     public String getName() {return name;};
     public void setName(String name) {this.name = name;};
@@ -45,6 +49,7 @@ public class Stock {
     public String toString() {
         return String.join(",",
                 id,
+                itemCode,
                 name,
                 String.valueOf(currentStock),
                 String.valueOf(minStock),
