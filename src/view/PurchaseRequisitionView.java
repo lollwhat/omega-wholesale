@@ -65,7 +65,7 @@ public class PurchaseRequisitionView extends JFrame {
         headerPanel.setBackground(mediumBlue);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JLabel titleLabel = new JLabel("Purchase Requisitions"); // Updated title
+        JLabel titleLabel = new JLabel("Purchase Requisition Management");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(highlightBlue);
         titleLabel.setHorizontalAlignment(JLabel.CENTER);
