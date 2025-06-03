@@ -107,8 +107,8 @@ public class PurchaseOrder {
                 createdBy != null ? createdBy : "",
                 updatedAt != null ? updatedAt : "",
                 updatedBy != null ? updatedBy : "",
-                receivedAt != null ? receivedAt : "",
-                receivedBy != null ? receivedBy : ""
+                receivedAt != null ? receivedAt : "null",
+                receivedBy != null ? receivedBy : "null"
         );
     }
 
