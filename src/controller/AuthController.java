@@ -78,7 +78,7 @@ public class AuthController extends CRUDController<User>{
         String roleCode = user.getUserID().substring(0, 2);
         switch (roleCode){
             case "AM" :
-                String[] menuItems = {"Dashboard", "User Management", "Item Management", "Supplier Management", "Inventory Management", "Stock Overview & Create Purchase Requisition", "Purchase Requisition Management", "PR Overview & Create Purchase Order", "Receive Purchase Order", "Daily Sales Entry"};
+                String[] menuItems = {"Dashboard", "User Management", "Item Management", "Supplier Management", "Inventory Management", "Stock Overview & Create Purchase Requisition", "Purchase Requisition Management", "PR Overview & Create Purchase Order", "Purchase Order Management", "Receive Purchase Order", "Daily Sales Entry"};
                 String[] quickOptions = {"User Management", "Item Management", "Supplier Management"};
                 new AdminView((Admin) user, menuItems, quickOptions);
                 break;
@@ -96,7 +96,7 @@ public class AuthController extends CRUDController<User>{
                 new SalesManagerView((SalesManager) user, menuItems, quickOptions);
                 break;
             case "PM":
-                menuItems = new String[]{"Dashboard", "View Item", "View Supplier", "PR Overview & Create Purchase Order", "List of Purchase Orders"};
+                menuItems = new String[]{"Dashboard", "View Item", "View Supplier", "PR Overview & Create Purchase Order", "Purchase Order Management"};
                 quickOptions = new String[]{"View Item", "View Supplier", "PR Overview & Create Purchase Order"};
                 new PurchaseManagerView((PurchaseManager) user, menuItems, quickOptions);
                 break;
