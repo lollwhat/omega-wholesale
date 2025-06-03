@@ -1,0 +1,3 @@
+TransactionID,PO_ID,ItemID,ItemName,SupplierID,SupplierName,AmountPaid,PaymentDate,ProcessedByUser
+TXN1748938810836,PO002,IM003,Dell UltraSharp 27 4K,SUP001,TechGlobal Solutions,360000,2025-06-03 16:20:10,FM001
+TXN1748938810836,PO002,IM004,Samsung 1TB NVMe SSD,SUP003,Component Kings,170000,2025-06-03 16:20:10,FM001

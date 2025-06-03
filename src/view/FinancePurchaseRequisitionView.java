@@ -5,6 +5,7 @@ import model.PurchaseOrder;
 import model.PurchaseOrderItem;
 import model.PurchaseRequisition;
 import model.PurchaseRequisitionItem;
+import util.table.mappers.PurchaseOrderRowMapper;
 
 import java.awt.*;
 import javax.swing.*;
@@ -24,13 +25,15 @@ public class FinancePurchaseRequisitionView extends JFrame {
 
     private JTable requisitionTable;
     private DefaultTableModel requisitionTableModel;
-    private String[] columnNames = {"PR ID", "Notes", "Supplier", "Status", "Created At", "Created By", "Updated At", "Updated By"};
+    private String[] columnNames = {"PR ID", "Notes", "Status", "Created At", "Created By", "Updated At", "Updated By"};
     private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
 
     private FMController fmController;
+    private PurchaseOrderRowMapper poRowMapper;
 
     public FinancePurchaseRequisitionView() {
         this.fmController = new FMController();
+        this.poRowMapper = new PurchaseOrderRowMapper();
 
         setTitle("View Purchase Requisition");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -46,20 +49,21 @@ public class FinancePurchaseRequisitionView extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(background);
+        headerPanel.setBackground(panelColour);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel requisitionTitle = new JLabel("View Purchase Requisition");
         requisitionTitle.setForeground(labelColour);
         requisitionTitle.setFont(new Font("Arial", Font.BOLD, 20));
-        headerPanel.add(requisitionTitle, BorderLayout.WEST);
+        requisitionTitle.setHorizontalAlignment(JLabel.CENTER);
+        headerPanel.add(requisitionTitle, BorderLayout.NORTH);
 
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(background);
         tablePanel.add(createTable(), BorderLayout.CENTER);
 
 
-//        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
         return mainPanel;
@@ -75,7 +79,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
         };
 
         requisitionTable = new JTable(requisitionTableModel);
-        requisitionTable.setBackground(panelColour);
+        requisitionTable.setBackground(background);
         requisitionTable.setForeground(textColour);
         requisitionTable.setSelectionBackground(lightBlue);
         requisitionTable.setSelectionForeground(textColour);
@@ -92,7 +96,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
         requisitionTable.getColumnModel().getColumn(4).setPreferredWidth(150);
         requisitionTable.getColumnModel().getColumn(5).setPreferredWidth(100);
         requisitionTable.getColumnModel().getColumn(6).setPreferredWidth(150);
-        requisitionTable.getColumnModel().getColumn(7).setPreferredWidth(100);
+//        requisitionTable.getColumnModel().getColumn(7).setPreferredWidth(100);
 
         requisitionTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -112,7 +116,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
         loadRequisitions();
 
         JScrollPane scrollPane = new JScrollPane(requisitionTable);
-        scrollPane.getViewport().setBackground(panelColour);
+        scrollPane.getViewport().setBackground(background);
 
         return scrollPane;
     }
@@ -126,6 +130,10 @@ public class FinancePurchaseRequisitionView extends JFrame {
             System.out.println("FMController is not initialized.");
             return;
         }
+        if (this.poRowMapper == null) {
+            this.poRowMapper = new PurchaseOrderRowMapper();
+        }
+
         this.requisitionTableModel.setRowCount(0); // Clear existing rows
 
         List<PurchaseRequisition> prHeader = this.fmController.getAllPurchaseRequisitionsHeaders();
@@ -136,7 +144,7 @@ public class FinancePurchaseRequisitionView extends JFrame {
                 Object[] rowData = {
                         requisition.getPrId(),
                         requisition.getNotes(),
-                        requisition.getStatus(),
+                        poRowMapper.getStatusString(requisition.getStatus()),
                         requisition.getCreatedAt(),
                         requisition.getCreatedBy(),
                         requisition.getUpdatedAt(),

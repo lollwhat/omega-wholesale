@@ -1,5 +1,8 @@
 package controller;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import model.PurchaseOrder;
@@ -9,9 +12,13 @@ import model.PurchaseRequisitionItem;
 import model.EntityType;
 
 import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 public class FMController extends CRUDController<PurchaseOrder> {
 
@@ -23,6 +30,10 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
     private static final String PR_ITEMS_FILE_PATH = "data/purchase_requisition_item.txt";
     private static final String PR_HEADER_FILE_PATH = "data/purchase_requisition.txt";
+
+    private static final String APPROVED_DETAILS_FILE = "data/purchase_order.txt";
+    private static final int STATUS_APPROVED = 1;
+
 
     public FMController (){
         super(PO_HEADER_FILE_PATH, EntityType.PURCHASE_ORDER);
@@ -251,27 +262,47 @@ public class FMController extends CRUDController<PurchaseOrder> {
         return purchaseRequisitions;
     }
 
-//    public void approvePurchaseOrder(String poId) {
-//        try {
-//            List<String> lines = Files.readAllLines(Paths.get(super.filePath));
-//            for (int i = 0; i < lines.size(); i++) {
-//                String[] parts = lines.get(i).split(",", 2);
-//                if (parts.length > 0 && parts[0].equals(poId)) {
-//                    PurchaseOrder po = PurchaseOrder.fromCSV(lines.get(i));
-//                    if (po != null) {
-//                        po.setStatus(PurchaseOrder.Status.APPROVED);
-//                        lines.set(i, po.toCSV());
-//                        Files.write(Paths.get(super.filePath), lines);
-//                        System.out.println("Purchase Order " + poId + " approved.");
-//                    }
-//                    return;
-//                }
-//            }
-//            System.err.println("Purchase Order with ID " + poId + " not found.");
-//        } catch (IOException e) {
-//            System.err.println("Error approving purchase order: " + e.getMessage());
-//        }
-//    }
+    public boolean updatePurchaseOrderStatus(String poId, int newStatus, String userId) {
+        PurchaseOrder poToUpdate = getFullPurchaseOrderDetailsById(poId);
+
+        if (poToUpdate == null) {
+            System.err.println("Purchase Order with ID '" + poId + "' not found for status update.");
+            return false;
+        }
+
+        poToUpdate.setStatus(newStatus);
+        poToUpdate.setUpdatedBy(userId);
+        poToUpdate.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+
+        try {
+            this.update(poToUpdate);
+            System.out.println("Purchase Order " + poId + " status updated to " + newStatus + " by user " + userId);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error saving Purchase Order " + poId + " after status update: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void generateApprovedReport(String savePath) throws IOException {
+        Path approvedFilePath = Paths.get(APPROVED_DETAILS_FILE);
+
+        if (!Files.exists(approvedFilePath)) {
+            throw new IOException("File not found.");
+        }
+
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.append("PO ID,Item Code, Item Name,Status,Date\n");
+        for (String line : Files.readAllLines(approvedFilePath)) {
+            reportContent.append(line).append("\n");
+        }
+
+        try (FileWriter writer = new FileWriter(savePath)) {
+            writer.write(reportContent.toString());
+        }
+    }
+
 
     @Override
     public void add(PurchaseOrder data) {
@@ -279,7 +310,85 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
     @Override
     public void update(PurchaseOrder purchaseOrder) {
+        if (purchaseOrder == null || purchaseOrder.getPoId() == null || purchaseOrder.getPoId().trim().isEmpty()) {
+            throw new IllegalArgumentException("FMController.update Purchase Order or PO ID cannot be null for update.");
+        }
 
+        String poIdToUpdate = purchaseOrder.getPoId();
+        boolean headerUpdatedInList = false;
+
+        try {
+            new FileController(super.filePath);
+            List<String> headerLines = new ArrayList<>(FileController.getFile());
+
+            for (int i = 0; i < headerLines.size(); i++) {
+                String line = headerLines.get(i);
+                String[] parts = line.split(",", 2);
+                if (parts.length > 0 && parts[0].equals(poIdToUpdate)) {
+                    headerLines.set(i, purchaseOrder.toCSV()); //
+                    headerUpdatedInList = true;
+                    break;
+                }
+            }
+
+            if (headerUpdatedInList) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(super.filePath, false))) {
+                    for (String line : headerLines) {
+                        writer.write(line);
+                        writer.newLine();
+                    }
+                    System.out.println("PO Header " + poIdToUpdate + " updated successfully using BufferedWriter.");
+                } catch (IOException e) {
+                    System.err.println("FMController.update: IOException while writing PO header for " + poIdToUpdate + " with BufferedWriter: " + e.getMessage());
+                    throw new RuntimeException("Failed to write PO header for " + poIdToUpdate, e);
+                }
+            } else {
+                System.err.println("FMController.update: PO Header " + poIdToUpdate + " not found in " + super.filePath + ". Header not updated.");
+            }
+        } catch (Exception e) {
+            System.err.println("FMController.update: Error preparing PO header update for " + poIdToUpdate + ": " + e.getMessage());
+            throw new RuntimeException("Failed to prepare PO header update for " + poIdToUpdate, e);
+        }
+
+
+        try {
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> allCurrentItemLines = FileController.getFile();
+            List<String> newMasterItemList = new ArrayList<>();
+
+            if (allCurrentItemLines != null) {
+                for (String itemLine : allCurrentItemLines) {
+                    String[] parts = itemLine.split(",", 2);
+                    if (parts.length > 0 && !parts[0].equals(poIdToUpdate)) {
+                        newMasterItemList.add(itemLine);
+                    }
+                }
+            }
+
+            if (purchaseOrder.getItems() != null) { //
+                for (PurchaseOrderItem item : purchaseOrder.getItems()) { //
+                    if (!item.getPoId().equals(poIdToUpdate)) {
+                        item.setPoId(poIdToUpdate); //
+                    }
+                    newMasterItemList.add(item.toCSV()); //
+                }
+            }
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(PO_ITEMS_FILE_PATH, false))) {
+                for (String itemLine : newMasterItemList) {
+                    writer.write(itemLine);
+                    writer.newLine();
+                }
+                System.out.println("FMController: PO Items for " + poIdToUpdate + " have been rewritten/updated using BufferedWriter.");
+            } catch (IOException e) {
+                System.err.println("FMController.update: IOException while writing PO items for " + poIdToUpdate + " with BufferedWriter: " + e.getMessage());
+                throw new RuntimeException("Failed to write PO items for " + poIdToUpdate, e);
+            }
+
+        } catch (Exception e) {
+            System.err.println("FMController.update: Error preparing PO items update for " + poIdToUpdate + ": " + e.getMessage());
+            throw new RuntimeException("Failed to prepare PO items update for " + poIdToUpdate, e);
+        }
     }
 
 
