@@ -1,13 +1,8 @@
 package view;
 
-import controller.*;
 import model.*;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 public class AdminView extends DashboardView {
 

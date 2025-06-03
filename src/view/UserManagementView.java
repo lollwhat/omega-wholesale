@@ -9,19 +9,22 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
-public class UserManagementView {
+public class UserManagementView extends JFrame{
     private final Color darkBlue = UITheme.DARK_BLUE;
     private final Color mediumBlue = UITheme.MEDIUM_BLUE;
+    protected final Color verylightBlue = UITheme.VERY_LIGHT_BLUE;
     private final Color lightBlue = UITheme.LIGHT_BLUE;
     private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE;
     private final Color textWhite = UITheme.TEXT_WHITE;
+    private final String filePath = "data/user_details.txt";
     private final UserController userController = new UserController();
-    FileController fileController = new FileController("data/user_details.txt");
     private JTable userTable;
+    String[] columnNames = {"ID", "Username", "Full Name", "Email", "Role", "Status", "Actions"};
 
     public JPanel createUserManagementPanel(){
         JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
@@ -58,8 +61,6 @@ public class UserManagementView {
 
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(darkBlue);
-
-        String[] columnNames = {"ID", "Username", "Full Name", "Email", "Role", "Status", "Actions"};
 
         JScrollPane scrollPane = createTable(columnNames);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
@@ -100,6 +101,27 @@ public class UserManagementView {
         userTable.getColumnModel().getColumn(actionsColumn).setCellRenderer(actionPanel);
         userTable.getColumnModel().getColumn(actionsColumn).setCellEditor(actionPanel);
 
+        userTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // For single click, check if it's not on the actions column before showing details
+                if (e.getClickCount() == 1) { // Changed to single click for detail view
+                    int viewRow = userTable.rowAtPoint(e.getPoint());
+                    int viewColumn = userTable.columnAtPoint(e.getPoint());
+
+                    if (viewRow >= 0 && viewColumn >= 0) {
+                        if (viewColumn != actionsColumn) { // Check if not actions column
+                            int modelRow = userTable.convertRowIndexToModel(viewRow);
+                            String supplierId = (String) userTable.getModel().getValueAt(modelRow, 0);
+                            if (supplierId != null && !supplierId.trim().isEmpty()) {
+                                showUserDetailsPopup(supplierId, columnNames);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(userTable);
         scrollPane.getViewport().setBackground(darkBlue);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -113,7 +135,6 @@ public class UserManagementView {
 
         private final JPanel panel;
         private int row;
-        AuthController authController = new AuthController();
 
         public ActionButtonPanel(JTable table) {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
@@ -125,6 +146,7 @@ public class UserManagementView {
                 table.getCellEditor().stopCellEditing();
 
                 String[] userData;
+                FileController fileController = new FileController(filePath);
                 try {
                     userData = fileController.getLine(0, userId);
                 } catch (IOException e) {
@@ -145,7 +167,7 @@ public class UserManagementView {
                         "Confirm Deletion", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     // Implement delete functionality by calling userController.deleteUser()
-                    authController.deleteUser(userId);
+                    userController.deleteUser(userId);
                     updateTable();
                 }
             });
@@ -157,8 +179,13 @@ public class UserManagementView {
                 try {
                     table.getCellEditor().stopCellEditing();
 
-                    authController.switchUserStatus(userId);
-                    updateTable();
+                    int confirm = JOptionPane.showConfirmDialog(panel,
+                            "Are you sure you want to change the status of this user?",
+                            "Confirm Switch", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        userController.switchUserStatus(userId);
+                        updateTable();
+                    }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -334,6 +361,18 @@ public class UserManagementView {
 
         actionButton.addActionListener(_ ->{
             String username = usernameField.getText();
+            if(isEditing){
+                if(FileController.verifyUsername(username, userData[0])) {
+                    JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }else{
+                if(FileController.verifyUsername(username)) {
+                    JOptionPane.showMessageDialog(dialog, "Username already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+
             String[] fullName = fullNameField.getText().trim().split("\\s+");
             String firstName = fullName[0];
             String lastName = "";
@@ -367,16 +406,15 @@ public class UserManagementView {
                     return;
             }
 
-            AuthController authController = new AuthController();
             if (isEditing) {
                 try {
-                    authController.updateUser(userData[0], username, password, firstName, lastName, email, status);
+                    userController.updateUser(userData[0], username, password, firstName, lastName, email, status);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
                 JOptionPane.showMessageDialog(dialog, "User updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                authController.createUser(roleCode, username, password, firstName, lastName, email, isActive);
+                userController.createUser(roleCode, username, password, firstName, lastName, email, isActive);
                 JOptionPane.showMessageDialog(dialog, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             }
             dialog.dispose();
@@ -421,24 +459,9 @@ public class UserManagementView {
     private void updateTable() {
         DefaultTableModel model = (DefaultTableModel) userTable.getModel();
         removeAllRows(model);
-        List<String> userData = fileController.getFile();
-        for (String line : userData) {
+        for (String line : userController.getUserData()) {
             String[] user = line.split(",");
-            Object[] rowData = new Object[7]; // Create a properly formatted row array
-
-            rowData[0] = user[0];  // ID
-            rowData[1] = user[1];  // Username
-            rowData[2] = user[3] + " " + user[4];  // Full Name (firstName + lastName)
-            rowData[3] = user[5];  // Email
-            rowData[4] = RoleName.getRoleName(user[0].substring(0, 2));  // Role
-
-            // Format status to proper case
-            String status = user[6].trim();
-            rowData[5] = status.substring(0,1).toUpperCase() + status.substring(1);
-
-            rowData[6] = "";  // Empty string for actions column
-
-            model.addRow(rowData);
+            model.addRow(userController.getUserDetails(user));
         }
     }
 
@@ -446,5 +469,94 @@ public class UserManagementView {
         while (model.getRowCount() > 0) {
             model.removeRow(0);
         }
+    }
+
+    private void showUserDetailsPopup(String userId, String[] allColumnNames) {
+        String userDataString = this.userController.getOneWithId(userId);
+
+        if (userDataString == null || userDataString.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Could not retrieve details for user ID: " + userId, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String[] userDetails = userDataString.split(",");
+
+        JDialog detailDialog = new JDialog(this, "User Details: " + userId, true);
+        detailDialog.setLayout(new BorderLayout(10, 10));
+        detailDialog.getContentPane().setBackground(mediumBlue);
+
+        JPanel detailsContentPanel = new JPanel();
+        int displayableDetailsCount = 0;
+        for (String colName : allColumnNames) {
+            if (!colName.equals("Actions")) {
+                displayableDetailsCount++;
+            }
+        }
+
+        detailsContentPanel.setLayout(new GridLayout(displayableDetailsCount, 2, 8, 8));
+        detailsContentPanel.setBackground(mediumBlue);
+        detailsContentPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        for (int i = 0; i < allColumnNames.length; i++) {
+            if (allColumnNames[i].equals("Actions")) continue;
+            if (i < userDetails.length) {
+                JLabel labelName = new JLabel(allColumnNames[i] + ":");
+                labelName.setForeground(textWhite);
+                labelName.setFont(new Font("Arial", Font.BOLD, 13));
+                detailsContentPanel.add(labelName);
+
+                if (allColumnNames[i].equals("Full Name")) {
+                    JLabel labelValue = new JLabel(userDetails[3].trim() + " " + userDetails[4].trim());
+                    labelValue.setForeground(verylightBlue);
+                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+                    detailsContentPanel.add(labelValue);
+                } else if (allColumnNames[i].equals("Email")) {
+                    JLabel labelValue = new JLabel(userDetails[5].trim());
+                    labelValue.setForeground(verylightBlue);
+                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+                    detailsContentPanel.add(labelValue);
+                } else if (allColumnNames[i].equals("Role")) {
+                    JLabel labelValue = new JLabel(RoleName.getRoleName(userDetails[0].substring(0, 2)));
+                    labelValue.setForeground(verylightBlue);
+                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+                    detailsContentPanel.add(labelValue);
+                } else if (allColumnNames[i].equals("Status")) {
+                    String status = userDetails[6].trim();
+                    JLabel labelValue = new JLabel(status.substring(0, 1).toUpperCase() + status.substring(1));
+                    labelValue.setForeground(verylightBlue);
+                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+                    detailsContentPanel.add(labelValue);
+                } else {
+                    JLabel labelValue = new JLabel(userDetails[i].trim());
+                    labelValue.setForeground(verylightBlue);
+                    labelValue.setFont(new Font("Arial", Font.PLAIN, 13));
+                    detailsContentPanel.add(labelValue);
+                }
+            }
+        }
+
+        JScrollPane detailScrollPane = new JScrollPane(detailsContentPanel);
+        detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        detailScrollPane.getViewport().setBackground(mediumBlue);
+
+        JButton closeButton = new JButton("Close");
+        closeButton.setFont(new Font("Arial", Font.BOLD, 12));
+        closeButton.setForeground(textWhite);
+        closeButton.setBackground(lightBlue);
+        closeButton.setFocusPainted(false);
+        closeButton.addActionListener(_ -> detailDialog.dispose());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(mediumBlue);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
+        buttonPanel.add(closeButton);
+
+        detailDialog.add(detailScrollPane, BorderLayout.CENTER);
+        detailDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        detailDialog.setMinimumSize(new Dimension(450, 350)); // Slightly increased height
+        detailDialog.pack();
+        detailDialog.setLocationRelativeTo(this);
+        detailDialog.setVisible(true);
     }
 }

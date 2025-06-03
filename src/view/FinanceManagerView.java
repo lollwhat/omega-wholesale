@@ -4,19 +4,18 @@ import model.User;
 import model.RoleName;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
 import javax.swing.*;
 
 public class FinanceManagerView extends JFrame {
     private User currentUser;
-    private String[] financeOptions = {"View Requistions", "View Purchase Orders", "Financial Management"};
+    private String[] financeOptions = {"View Requisitions", "View Purchase Orders", "Financial Management"};
 
-    private final Color background = new Color(21, 31, 46);
-    private final Color panelColour = new Color(30, 41, 59);
-    private final Color lightBlue = new Color(96, 103, 205);
-    private final Color verylightBlue = new Color(165, 180, 252);
-    private final Color labelColour = new Color(78, 91, 249);
-    private final Color textColour = new Color(255, 255, 255);
+    private Color background = new Color(21, 31, 46);
+    private Color panelColour = new Color(30, 41, 59);
+    private Color lightBlue = new Color(96, 103, 205);
+    private Color verylightBlue = new Color(165, 180, 252);
+    private Color labelColour = new Color(78, 91, 249);
+    private Color textColour = new Color(255, 255, 255);
 
     public FinanceManagerView(User user) {
         this.currentUser = user;
@@ -48,18 +47,6 @@ public class FinanceManagerView extends JFrame {
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(dashboardPanel, BorderLayout.CENTER);
 
-//        add(b1, BorderLayout.SOUTH);
-
-//        ActionListener Button1 = new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//
-//            }
-//        };
-
-
-//
-//        add(b1, BorderLayout.SOUTH);
     }
 
     private JPanel createFinanceDashboard() {
@@ -97,18 +84,47 @@ public class FinanceManagerView extends JFrame {
         buttonWrapper.setPreferredSize(new Dimension(900, 500));
         buttonWrapper.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        JButton b1 = createDashboardButton("View Requisition", e -> {});
-        JButton b2 = createDashboardButton("View Purchase Order", e -> {});
-        JButton b3 = createDashboardButton("Financial Management", e -> {});
+
+        for(String options : financeOptions) {
+            JButton dashboardButton = createDashboardButton(options);
+
+            dashboardButton.addActionListener(e -> {
+                switch (options) {
+                    case "View Requisitions":
+                        System.out.println("View Requisitions clicked");
+                        // Open Requisition View
+                        FinancePurchaseRequisitionView requisitionView = new FinancePurchaseRequisitionView();
+                        requisitionView.setVisible(true);
+                        break;
+                    case "View Purchase Orders":
+                        // Open Purchase Order View
+//                        PurchaseOrderView purchaseOrderView = new PurchaseOrderView(currentUser);
+//                        purchaseOrderView.setVisible(true);
+                        break;
+                    case "Financial Management":
+                        // Open Financial Management View
+//                        FinancialManagementView financialManagementView = new FinancialManagementView(currentUser);
+//                        financialManagementView.setVisible(true);
+                        break;
+                    default:
+                        break;
+                }
+            });
+            buttonWrapper.add(dashboardButton);
+        }
+
+//        JButton b1 = createDashboardButton("View Requisition", e -> {});
+//        JButton b2 = createDashboardButton("View Purchase Order", e -> {});
+//        JButton b3 = createDashboardButton("Financial Management", e -> {});
 
         financeDashboard.add(dashboardTitle);
         financeDashboard.add(dashboardGreeting);
         financeDashboard.add(dashboardInstruction);
         financeDashboard.add(quickAccess);
         financeDashboard.add(buttonWrapper);
-        buttonWrapper.add(b1);
-        buttonWrapper.add(b2);
-        buttonWrapper.add(b3);
+//        buttonWrapper.add(b1);
+//        buttonWrapper.add(b2);
+//        buttonWrapper.add(b3);
 
         return financeDashboard;
     }
@@ -147,11 +163,29 @@ public class FinanceManagerView extends JFrame {
 
 
         for(String options : financeOptions) {
-            JButton navigationButton = createNavigationButton(options, e -> {
-//                JPanel contentPanel = createPurchaseOrderPanel(options);
-//                if (contentPanel != null) {
-//                    contentPanel.setVisible(true);
-//                }
+            JButton navigationButton = createNavigationButton(options);
+
+            navigationButton.addActionListener(e -> {
+                switch (options) {
+                    case "View Requisitions":
+                        System.out.println("View Requisitions clicked");
+                        // Open Requisition View
+                        FinancePurchaseRequisitionView requisitionView = new FinancePurchaseRequisitionView();
+                        requisitionView.setVisible(true);
+                        break;
+                    case "View Purchase Orders":
+                        // Open Purchase Order View
+//                        PurchaseOrderView purchaseOrderView = new PurchaseOrderView(currentUser);
+//                        purchaseOrderView.setVisible(true);
+                        break;
+                    case "Financial Management":
+                        // Open Financial Management View
+//                        FinancialManagementView financialManagementView = new FinancialManagementView(currentUser);
+//                        financialManagementView.setVisible(true);
+                        break;
+                    default:
+                        break;
+                }
             });
             buttonWrapper.add(navigationButton);
         }
@@ -184,19 +218,23 @@ public class FinanceManagerView extends JFrame {
         headerLabel.setBorder(BorderFactory.createEmptyBorder(25, 15, 15, 15));
 
         JLabel headerDate = new JLabel();
+        headerDate.setText(java.time.LocalDate.now() + "");
+        headerDate.setForeground(textColour);
+        headerDate.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        headerDate.setBorder(BorderFactory.createEmptyBorder(0,800,20,20));
 
-        headerPanel.add(headerLabel);
-
+        headerPanel.add(headerLabel, BorderLayout.WEST);
+        headerPanel.add(headerDate, BorderLayout.EAST);
         return headerPanel;
     }
 
-    private JButton createNavigationButton(String text, ActionListener actionListener) {
+    private JButton createNavigationButton(String text) {
 
         JButton navigationButton = new JButton(text);
         navigationButton.setBackground(panelColour);
         navigationButton.setForeground(textColour);
         navigationButton.setFont(new Font("SansSerif", Font.BOLD, 16));
-        navigationButton.addActionListener(actionListener);
+//        navigationButton.addActionListener(actionListener);
         navigationButton.setSize(new Dimension(250, 100));
         navigationButton.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         navigationButton.setFocusPainted(false);
@@ -214,17 +252,17 @@ public class FinanceManagerView extends JFrame {
         return navigationButton;
     }
 
-    private JButton createDashboardButton (String text, ActionListener actionListener) {
+    private JButton createDashboardButton (String text) {
         JButton dashboardButton = new JButton(text);
         dashboardButton.setBackground(panelColour);
         dashboardButton.setForeground(textColour);
         dashboardButton.setFont(new Font("SansSerif", Font.BOLD, 16));
-        dashboardButton.addActionListener(actionListener);
+//        dashboardButton.addActionListener(actionListener);
         dashboardButton.setSize(new Dimension(900, 100));
         dashboardButton.setBorder(BorderFactory.createEmptyBorder(20, 15, 15, 15));
         dashboardButton.setFocusPainted(false);
 
-        dashboardButton.addMouseListener(new java.awt.event.MouseAdapter() {;
+        dashboardButton.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 dashboardButton.setBackground(verylightBlue);
