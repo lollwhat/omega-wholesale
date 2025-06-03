@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserController extends CRUDController<User>{
     List<String> userData;
@@ -76,6 +77,8 @@ public class UserController extends CRUDController<User>{
 
             Map<String, String> newId = FileController.getLastUserIdByRole();
 
+            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12));
+
             String userId = null;
             if(newId.containsKey(role)){
                 String lastId = newId.get(role);
@@ -83,7 +86,7 @@ public class UserController extends CRUDController<User>{
                 userId = String.format("%s%03d", role, numericPart + 1);
             }
 
-            User user = authController.userInstance(role, userId, username, password, firstName, lastName, email, status, createdAt, createdAt);
+            User user = authController.userInstance(role, userId, username, hashedPassword, firstName, lastName, email, status, createdAt, createdAt);
 
             add(user);
         }catch(IOException e){
@@ -105,12 +108,13 @@ public class UserController extends CRUDController<User>{
 
     public void updateUser(String userID, String username, String password, String firstName, String lastName, String email, String status) throws IOException {
         String[] userData = fileController.getLine(0, userID);
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12));
         if (userData == null) {
             System.out.println("User not found");
             return;
         }
 
-        update(authController.userInstance(userData[0].substring(0,2), userData[0], username, password, firstName, lastName, email, status, userData[7], new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
+        update(authController.userInstance(userData[0].substring(0,2), userData[0], username, hashedPassword, firstName, lastName, email, status, userData[7], new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
     }
 
     public void deleteUser(String userID){

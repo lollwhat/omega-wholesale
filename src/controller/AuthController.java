@@ -5,6 +5,7 @@ import view.*;
 
 import javax.swing.*;
 import java.util.List;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class AuthController{
 
@@ -45,28 +46,33 @@ public class AuthController{
     public User login(String username, String password){
         List<String> userData = FileController.getFile();
         for (String line : userData) {
-//            System.out.println(line);
             String[] details = line.split(",");
-            if (details[1].trim().equals(username) && details[2].trim().equals(password)) {
-                String userId = details[0].trim();
-                String firstName = details[3].trim();
-                String lastName = details[4].trim();
-                String email = details[5].trim();
-                String status = details[6].trim();
-                String createdAt = details[7].trim();
-                String updatedAt = details[8].trim();
-                String roleCode = userId.substring(0, 2);
+            if (details[1].trim().equals(username)) {
+                String storedHashedPassword = details[2].trim();
 
-                if(status.equals("active")) {
-                    User user = userInstance(roleCode, userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+                boolean matches = BCrypt.checkpw(password, storedHashedPassword);
 
-                    // Set the current user in the session manager
-                    if (user != null) {
-                        sessionManager.setCurrentUser(user);
-                        return user;
+                if(matches) {
+                    String userId = details[0].trim();
+                    String firstName = details[3].trim();
+                    String lastName = details[4].trim();
+                    String email = details[5].trim();
+                    String status = details[6].trim();
+                    String createdAt = details[7].trim();
+                    String updatedAt = details[8].trim();
+                    String roleCode = userId.substring(0, 2);
+
+                    if (status.equals("active")) {
+                        User user = userInstance(roleCode, userId, username, password, firstName, lastName, email, status, createdAt, updatedAt);
+
+                        // Set the current user in the session manager
+                        if (user != null) {
+                            sessionManager.setCurrentUser(user);
+                            return user;
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Your account is inactive. Please contact the administrator for more details.");
                     }
-                }else{
-                    JOptionPane.showMessageDialog(null, "Your account is inactive. Please contact the administrator for more details.");
                 }
             }
         }
