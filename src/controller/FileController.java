@@ -13,13 +13,13 @@ import java.util.logging.Logger;
 public class FileController {
     private static String filePath;
     private static List<String> fileLines = new ArrayList<>();
-    private static List<String> targetLines = new ArrayList<>();
+    private static final List<String> targetLines = new ArrayList<>();
     private List<String> updatedLines = new ArrayList<>();
     private static FileWriter fileWriter;
 
 
     public FileController(String filePath) {
-        this.filePath = filePath;
+        FileController.filePath = filePath;
     }
 
     // Method to read file
@@ -69,7 +69,7 @@ public class FileController {
     }
 
     // Method to get multiple lines of data
-    public List<String> getLines(int index, String identifier) throws IOException {
+    public List<String> getLines(int index, String identifier) {
         targetLines.clear();
         readFile();
         for (String line : fileLines) {
@@ -190,7 +190,7 @@ public class FileController {
     // Method to get last ID (001, 002, 003, etc.)
     private String getLastId() throws IOException { // get last id for id generate
         String lastLine = null;
-        String lastId = null;
+        String lastId;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String currentLine;

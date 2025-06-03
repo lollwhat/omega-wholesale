@@ -1,7 +1,6 @@
 package view;
 
 import controller.*;
-import model.RoleName;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -11,7 +10,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 public class UserManagementView {
     private final Color darkBlue = UITheme.DARK_BLUE;
@@ -19,8 +17,9 @@ public class UserManagementView {
     private final Color lightBlue = UITheme.LIGHT_BLUE;
     private final Color highlightBlue = UITheme.HIGHLIGHT_BLUE;
     private final Color textWhite = UITheme.TEXT_WHITE;
-    private final UserController userController = new UserController();
-    FileController fileController = new FileController("data/user_details.txt");
+    private final String filePath = "data/user_details.txt";
+    private final UserController userController = new UserController(filePath);
+    FileController fileController = new FileController(filePath);
     private JTable userTable;
 
     public JPanel createUserManagementPanel(){
@@ -438,24 +437,9 @@ public class UserManagementView {
     private void updateTable() {
         DefaultTableModel model = (DefaultTableModel) userTable.getModel();
         removeAllRows(model);
-        List<String> userData = fileController.getFile();
-        for (String line : userData) {
+        for (String line : userController.getUserData()) {
             String[] user = line.split(",");
-            Object[] rowData = new Object[7]; // Create a properly formatted row array
-
-            rowData[0] = user[0];  // ID
-            rowData[1] = user[1];  // Username
-            rowData[2] = user[3] + " " + user[4];  // Full Name (firstName + lastName)
-            rowData[3] = user[5];  // Email
-            rowData[4] = RoleName.getRoleName(user[0].substring(0, 2));  // Role
-
-            // Format status to proper case
-            String status = user[6].trim();
-            rowData[5] = status.substring(0,1).toUpperCase() + status.substring(1);
-
-            rowData[6] = "";  // Empty string for actions column
-
-            model.addRow(rowData);
+            model.addRow(userController.getUserDetails(user));
         }
     }
 

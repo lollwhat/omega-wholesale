@@ -15,7 +15,7 @@ public class AuthController extends CRUDController<User>{
         super("data/user_details.txt", EntityType.USER);
     }
 
-    private SessionController sessionManager = SessionController.getInstance();
+    private final SessionController sessionManager = SessionController.getInstance();
 
     private User userInstance(String roleCode, String userId, String username, String password, String firstName, String lastName, String email, String status, String createdAt, String updatedAt) {
         User user = null;
@@ -76,10 +76,12 @@ public class AuthController extends CRUDController<User>{
 
     public void openDashboard(User user){
         String roleCode = user.getUserID().substring(0, 2);
+        String[] menuItems;
+        String[] quickOptions;
         switch (roleCode){
             case "AM" :
-                String[] menuItems = {"Dashboard", "User Management", "Item Management", "Supplier Management", "Inventory Management", "Stock Overview & Create Purchase Requisition", "Purchase Requisition Management", "PR Overview & Create Purchase Order", "Purchase Order Management", "Receive Purchase Order", "Daily Sales Entry"};
-                String[] quickOptions = {"User Management", "Item Management", "Supplier Management"};
+                menuItems = new String[]{"Dashboard", "User Management", "Item Management", "Supplier Management", "Inventory Management", "Stock Overview & Create Purchase Requisition", "Purchase Requisition Management", "PR Overview & Create Purchase Order", "Purchase Order Management", "Receive Purchase Order", "Daily Sales Entry"};
+                quickOptions = new String[]{"User Management", "Item Management", "Supplier Management"};
                 new AdminView((Admin) user, menuItems, quickOptions);
                 break;
             case "SM":
@@ -107,7 +109,7 @@ public class AuthController extends CRUDController<User>{
                 new InventoryManagerView((InventoryManager) user, menuItems, quickOptions);
                 break;
             case "FM":
-                FinanceManagerView FinanceManager = new FinanceManagerView(user);
+                new FinanceManagerView(user);
                 break;
             default:
                 break;
@@ -184,7 +186,7 @@ public class AuthController extends CRUDController<User>{
     }
 
     public void displayLoginMenu(){
-        LoginView loginView = new LoginView(this);
+        new LoginView(this);
     }
 
     public void logout() {
