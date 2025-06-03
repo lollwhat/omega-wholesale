@@ -1,75 +1,396 @@
 package controller;
 
-import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
-import model.FinanceManager;
-import view.FinanceManagerView;
+import model.PurchaseOrder;
+import model.PurchaseOrderItem;
+import model.PurchaseRequisition;
+import model.PurchaseRequisitionItem;
+import model.EntityType;
 
-import javax.swing.*;
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
-public class FMController{
+public class FMController extends CRUDController<PurchaseOrder> {
 
-    private FinanceManager model;
-    private FinanceManagerView view;
-    private static final String PurchaseOrder = "data/po_details.txt";
+    private FileController poItemFileController;
+    private FileController prItemFileController;
 
-    public FMController (FinanceManager model, FinanceManagerView view){
-        this.model = model;
-        this.view = view;
+    private static final String PO_ITEMS_FILE_PATH = "data/purchase_order_item.txt";
+    private static final String PO_HEADER_FILE_PATH = "data/purchase_order.txt";
+
+    private static final String PR_ITEMS_FILE_PATH = "data/purchase_requisition_item.txt";
+    private static final String PR_HEADER_FILE_PATH = "data/purchase_requisition.txt";
+
+    private static final String APPROVED_DETAILS_FILE = "data/purchase_order.txt";
+    private static final int STATUS_APPROVED = 1;
+
+
+    public FMController (){
+        super(PO_HEADER_FILE_PATH, EntityType.PURCHASE_ORDER);
+        this.poItemFileController = new FileController(PO_ITEMS_FILE_PATH);
+        this.prItemFileController = new FileController(PR_ITEMS_FILE_PATH);
+
+
+        checkFileExists(PO_ITEMS_FILE_PATH);
+        checkFileExists(PO_HEADER_FILE_PATH);
+        checkFileExists(PR_ITEMS_FILE_PATH);
+        checkFileExists(PR_HEADER_FILE_PATH);
     }
 
-    public String getPO() {
-        StringBuilder builder = new StringBuilder();
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(PurchaseOrder));
-            String line;
-
-            while((line = reader.readLine()) != null) {
-                String[] details =  line.split(",");
-                if(details.length == 9){
-                    String POid = details[0];
-                    String POdate = details[1];
-                    String POreq = details[2];
-                    String POitem = details[3];
-                    String POquantity = details[4];
-                    String POsupplier = details[5];
-                    String POstatus = details[6];
-                    String POcreatedBy = details[7];
-                    String POapprovedBy = details[8];
-
-                    builder.append(line).append("\n");
-                } else System.out.println("Details does not fit required length");
+    private void checkFileExists(String filePath){
+        try{
+            File file = new File(filePath);
+            if(!file.exists()) {
+                if(file.getParentFile() != null && !file.getParentFile().exists()){
+                    file.getParentFile().mkdirs();
+                }
+                file.createNewFile();
             }
-            reader.close();
-        } catch(IOException e){
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("Error ensuring file exists at " + filePath + ": " + e.getMessage());
         }
-        return builder.toString();
     }
 
-//    public String approvePO() {
-//        String approve = "Approved";
-//
-//        File original =  new File(PurchaseOrder);
-//        BufferedReader reader = new BufferedReader(new FileReader(PurchaseOrder));
-//
-//        File temp = new File("temp_details.txt");
-//        PrintWriter writer = new PrintWriter(new FileWriter(temp));
-//
-//        String line = null;
-//
-//        while ((line = reader.readLine()) !=null) {
-//            int i = 1;
-//            //if() {
-//                String[] details =  line.split(",");
-//                String POstatus = details[6];
-//
-//                String newStatus = String.valueOf(details[6] = approve).trim();
-//
-//            //}
-//        }
-//        return null;
-//    }
+    //Purchase Order Methods
+    public List<PurchaseOrder> getAllPurchaseOrderHeaders() {
+        List<PurchaseOrder> poHeader = new ArrayList<>();
+
+        try{
+            new FileController(super.filePath);
+            List<String> lines = FileController.getFile();
+            if(lines != null) {
+                for (String line : lines) {
+                    PurchaseOrder purchaseOrder = PurchaseOrder.fromCSV(line);
+                    if (purchaseOrder != null) {
+                        poHeader.add(purchaseOrder);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase order header file: " + super.filePath + " " + e.getMessage());
+        }
+
+        return poHeader;
+    }
+
+    public PurchaseOrder getFullPurchaseOrderDetailsById(String poId) {
+        PurchaseOrder poHeader = null;
+
+        try {
+            new FileController(super.filePath);
+            List<String> lines = FileController.getFile();
+            for (String line : lines) {
+                String[] parts = line.split(",", 2);
+                if (parts.length > 0 && parts[0].equals(poId)) {
+                    poHeader = PurchaseOrder.fromCSV(line);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase order details: " + super.filePath + " " + e.getMessage());
+        }
+
+        if (poHeader == null) {
+            System.err.println("Purchase order with ID " + poId + " not found.");
+            return null;
+        }
+
+        List<PurchaseOrderItem> poItems = new ArrayList<>();
+        try {
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
+            for (String itemLine : itemLines) {
+                String[] itemParts = itemLine.split(",", 2);
+                if (itemParts.length > 0 && itemParts[0].equals(poId)) {
+                    PurchaseOrderItem item = PurchaseOrderItem.fromCSV(itemLine);
+                    if (item != null) {
+                        poItems.add(item);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase order items: " + PO_ITEMS_FILE_PATH + " " + e.getMessage());
+        }
+        poHeader.setItems(poItems);
+
+        return poHeader;
+    }
+
+    // Purchase Requisition Methods
+    public List<PurchaseRequisition> getAllPurchaseRequisitionsHeaders() {
+        List<PurchaseRequisition> prHeader = new ArrayList<>();
+
+        try {
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> lines = FileController.getFile();
+            if (lines != null) {
+                for (String line : lines) {
+                    PurchaseRequisition purchaseRequisition = PurchaseRequisition.fromHeaderCSV(line);
+                    if (purchaseRequisition != null) {
+                        prHeader.add(purchaseRequisition);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase requisition header file: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
+        }
+
+        return prHeader;
+    }
+
+    public PurchaseRequisition getFullPurchaseRequisitionDetailsById(String prId) {
+        PurchaseRequisition prHeader = null;
+
+        try {
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> lines = FileController.getFile();
+            for (String line : lines) {
+                String[] parts = line.split(",", 2);
+                if (parts.length > 0 && parts[0].equals(prId)) {
+                    prHeader = PurchaseRequisition.fromHeaderCSV(line);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase requisition details: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
+        }
+
+        if (prHeader == null) {
+            System.err.println("Purchase requisition with ID " + prId + " not found.");
+            return null;
+        }
+
+        List<PurchaseRequisitionItem> prItems = new ArrayList<>();
+        try {
+            new FileController(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
+            for (String itemLine : itemLines) {
+                String[] itemParts = itemLine.split(",", 2);
+                if (itemParts.length > 0 && itemParts[0].equals(prId)) {
+                    PurchaseRequisitionItem item = PurchaseRequisitionItem.fromCSV(itemLine);
+                    if (item != null) {
+                        prItems.add(item);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase requisition items: " + PR_ITEMS_FILE_PATH + " " + e.getMessage());
+        }
+        prHeader.setItems(prItems);
+
+        return prHeader;
+    }
+
+    //Get all details including items
+
+    public List<PurchaseOrder> getAllPurchaseOrderWithDetails() {
+        List<PurchaseOrder> purchaseOrders = new ArrayList<>();
+        Map<String, List<PurchaseOrderItem>> poItemsMap = new HashMap<>();
+
+        try {
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
+            for (String itemLine : itemLines) {
+                PurchaseOrderItem item = PurchaseOrderItem.fromCSV(itemLine);
+                if (item != null && item.getPoId() != null) {
+                    poItemsMap.computeIfAbsent(item.getPoId(), k -> new ArrayList<>()).add(item);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase order items: " + PO_ITEMS_FILE_PATH + " " + e.getMessage());
+
+            return purchaseOrders;
+        }
+
+        try {
+            new FileController(super.filePath);
+            List<String> headerLines = FileController.getFile();
+            for (String headerLine : headerLines) {
+                PurchaseOrder poHeader = PurchaseOrder.fromCSV(headerLine);
+                if (poHeader != null) {
+                    poHeader.setItems(poItemsMap.getOrDefault(poHeader.getPoId(), new ArrayList<>()));
+                    purchaseOrders.add(poHeader);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase order header file: " + super.filePath + " " + e.getMessage());
+        }
+        return purchaseOrders;
+    }
+
+    public List<PurchaseRequisition> getAllPurchaseRequisitionWithDetails() {
+        List<PurchaseRequisition> purchaseRequisitions = new ArrayList<>();
+        Map<String, List<PurchaseRequisitionItem>> prItemsMap = new HashMap<>();
+
+        try {
+            new FileController(PR_ITEMS_FILE_PATH);
+            List<String> itemLines = FileController.getFile();
+            for (String itemLine : itemLines) {
+                PurchaseRequisitionItem item = PurchaseRequisitionItem.fromCSV(itemLine);
+                if (item != null && item.getPrId() != null) {
+                    prItemsMap.computeIfAbsent(item.getPrId(), k -> new ArrayList<>()).add(item);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase requisition items: " + PR_ITEMS_FILE_PATH + " " + e.getMessage());
+            return purchaseRequisitions;
+        }
+
+        try {
+            new FileController(PR_HEADER_FILE_PATH);
+            List<String> headerLines = FileController.getFile();
+            for (String headerLine : headerLines) {
+                PurchaseRequisition prHeader = PurchaseRequisition.fromHeaderCSV(headerLine);
+                if (prHeader != null) {
+                    prHeader.setItems(prItemsMap.get(prHeader.getPrId()));
+                    purchaseRequisitions.add(prHeader);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading purchase requisition header file: " + PR_HEADER_FILE_PATH + " " + e.getMessage());
+        }
+        return purchaseRequisitions;
+    }
+
+    public boolean updatePurchaseOrderStatus(String poId, int newStatus, String userId) {
+        PurchaseOrder poToUpdate = getFullPurchaseOrderDetailsById(poId);
+
+        if (poToUpdate == null) {
+            System.err.println("Purchase Order with ID '" + poId + "' not found for status update.");
+            return false;
+        }
+
+        poToUpdate.setStatus(newStatus);
+        poToUpdate.setUpdatedBy(userId);
+        poToUpdate.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+
+        try {
+            this.update(poToUpdate);
+            System.out.println("Purchase Order " + poId + " status updated to " + newStatus + " by user " + userId);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error saving Purchase Order " + poId + " after status update: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void generateApprovedReport(String savePath) throws IOException {
+        Path approvedFilePath = Paths.get(APPROVED_DETAILS_FILE);
+
+        if (!Files.exists(approvedFilePath)) {
+            throw new IOException("File not found.");
+        }
+
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.append("PO ID,Item Code, Item Name,Status,Date\n");
+        for (String line : Files.readAllLines(approvedFilePath)) {
+            reportContent.append(line).append("\n");
+        }
+
+        try (FileWriter writer = new FileWriter(savePath)) {
+            writer.write(reportContent.toString());
+        }
+    }
+
+
+    @Override
+    public void add(PurchaseOrder data) {
+    }
+
+    @Override
+    public void update(PurchaseOrder purchaseOrder) {
+        if (purchaseOrder == null || purchaseOrder.getPoId() == null || purchaseOrder.getPoId().trim().isEmpty()) {
+            throw new IllegalArgumentException("FMController.update Purchase Order or PO ID cannot be null for update.");
+        }
+
+        String poIdToUpdate = purchaseOrder.getPoId();
+        boolean headerUpdatedInList = false;
+
+        try {
+            new FileController(super.filePath);
+            List<String> headerLines = new ArrayList<>(FileController.getFile());
+
+            for (int i = 0; i < headerLines.size(); i++) {
+                String line = headerLines.get(i);
+                String[] parts = line.split(",", 2);
+                if (parts.length > 0 && parts[0].equals(poIdToUpdate)) {
+                    headerLines.set(i, purchaseOrder.toCSV()); //
+                    headerUpdatedInList = true;
+                    break;
+                }
+            }
+
+            if (headerUpdatedInList) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(super.filePath, false))) {
+                    for (String line : headerLines) {
+                        writer.write(line);
+                        writer.newLine();
+                    }
+                    System.out.println("PO Header " + poIdToUpdate + " updated successfully using BufferedWriter.");
+                } catch (IOException e) {
+                    System.err.println("FMController.update: IOException while writing PO header for " + poIdToUpdate + " with BufferedWriter: " + e.getMessage());
+                    throw new RuntimeException("Failed to write PO header for " + poIdToUpdate, e);
+                }
+            } else {
+                System.err.println("FMController.update: PO Header " + poIdToUpdate + " not found in " + super.filePath + ". Header not updated.");
+            }
+        } catch (Exception e) {
+            System.err.println("FMController.update: Error preparing PO header update for " + poIdToUpdate + ": " + e.getMessage());
+            throw new RuntimeException("Failed to prepare PO header update for " + poIdToUpdate, e);
+        }
+
+
+        try {
+            new FileController(PO_ITEMS_FILE_PATH);
+            List<String> allCurrentItemLines = FileController.getFile();
+            List<String> newMasterItemList = new ArrayList<>();
+
+            if (allCurrentItemLines != null) {
+                for (String itemLine : allCurrentItemLines) {
+                    String[] parts = itemLine.split(",", 2);
+                    if (parts.length > 0 && !parts[0].equals(poIdToUpdate)) {
+                        newMasterItemList.add(itemLine);
+                    }
+                }
+            }
+
+            if (purchaseOrder.getItems() != null) { //
+                for (PurchaseOrderItem item : purchaseOrder.getItems()) { //
+                    if (!item.getPoId().equals(poIdToUpdate)) {
+                        item.setPoId(poIdToUpdate); //
+                    }
+                    newMasterItemList.add(item.toCSV()); //
+                }
+            }
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(PO_ITEMS_FILE_PATH, false))) {
+                for (String itemLine : newMasterItemList) {
+                    writer.write(itemLine);
+                    writer.newLine();
+                }
+                System.out.println("FMController: PO Items for " + poIdToUpdate + " have been rewritten/updated using BufferedWriter.");
+            } catch (IOException e) {
+                System.err.println("FMController.update: IOException while writing PO items for " + poIdToUpdate + " with BufferedWriter: " + e.getMessage());
+                throw new RuntimeException("Failed to write PO items for " + poIdToUpdate, e);
+            }
+
+        } catch (Exception e) {
+            System.err.println("FMController.update: Error preparing PO items update for " + poIdToUpdate + ": " + e.getMessage());
+            throw new RuntimeException("Failed to prepare PO items update for " + poIdToUpdate, e);
+        }
+    }
+
 
 
 }
