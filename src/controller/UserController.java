@@ -1,20 +1,27 @@
 package controller;
 
+import model.EntityType;
 import model.RoleName;
+import model.User;
 
 import javax.swing.table.DefaultTableModel;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
-public class UserController{
-    String filepath;
+public class UserController extends CRUDController<User>{
     List<String> userData;
+    AuthController authController;
 
-    public UserController(String filepath){
-        this.filepath = filepath;
+    public UserController(){
+        super("data/user_details.txt", EntityType.USER);
+        this.authController = new AuthController();
     }
 
     public List<String> getUserData() {
-        new FileController(filepath);
+        new FileController("data/user_details.txt");
         userData = FileController.getFile();
         return userData;
     }
@@ -49,5 +56,74 @@ public class UserController{
 
         userDetails[6] = "";
         return userDetails;
+    }
+
+    @Override
+    public void add(User user){
+        try{
+            String data = user.toCSV();
+            FileController.appendFile(data);
+            System.out.println("User added successfully");
+        } catch (Exception e) {
+            System.out.println("Error adding user to file: " + e.getMessage());
+        }
+    }
+
+    public void createUser(String role, String username, String password, String firstName, String lastName, String email, Boolean isActive){
+        try{
+            String status = isActive ? "active" : "inactive";
+            String createdAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+            Map<String, String> newId = FileController.getLastUserIdByRole();
+
+            String userId = null;
+            if(newId.containsKey(role)){
+                String lastId = newId.get(role);
+                int numericPart = Integer.parseInt(lastId.substring(2));
+                userId = String.format("%s%03d", role, numericPart + 1);
+            }
+
+            User user = authController.userInstance(role, userId, username, password, firstName, lastName, email, status, createdAt, createdAt);
+
+            add(user);
+        }catch(IOException e){
+            System.out.println("Error reading user data: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void update(User user){
+        try{
+            String data = user.toCSV();
+            System.out.println(data);
+            fileController.updateFile(data);
+            System.out.println("User added successfully");
+        } catch (Exception e) {
+            System.out.println("Error adding user to file: " + e.getMessage());
+        }
+    }
+
+    public void updateUser(String userID, String username, String password, String firstName, String lastName, String email, String status) throws IOException {
+        String[] userData = fileController.getLine(0, userID);
+        if (userData == null) {
+            System.out.println("User not found");
+            return;
+        }
+
+        update(authController.userInstance(userData[0].substring(0,2), userData[0], username, password, firstName, lastName, email, status, userData[7], new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
+    }
+
+    public void deleteUser(String userID){
+        delete(userID);
+    }
+
+    public void switchUserStatus(String userID) throws IOException {
+        String[] userData = fileController.getLine(0, userID);
+        String status = userData[6].trim();
+        String newStatus = status.equals("active") ? "inactive" : "active";
+        userData[6] = newStatus;
+
+        String updatedLine = String.join(",", userData);
+        fileController.updateFile(updatedLine);
     }
 }
