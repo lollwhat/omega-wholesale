@@ -26,6 +26,9 @@ public class FMView extends DashboardView{
             case "Purchase Order Management":
                 FinancePOManagementView financialManagementView = new FinancePOManagementView();
                 return financialManagementView.createPurchaseOrderPanel();
+            case "Approved Purchase Orders":
+                FMPOApprovedView approvedPurchaseOrdersView = new FMPOApprovedView();
+                return approvedPurchaseOrdersView.createFMPOApprovedPanel();
             default:
                 return createDashboardContentPanel(quickOptions);
         }

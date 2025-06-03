@@ -259,7 +259,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
         PurchaseOrder poToUpdate = getFullPurchaseOrderDetailsById(poId);
 
         if (poToUpdate == null) {
-            System.err.println("FMController: Purchase Order with ID '" + poId + "' not found for status update.");
+            System.err.println("Purchase Order with ID '" + poId + "' not found for status update.");
             return false;
         }
 
@@ -269,10 +269,10 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
         try {
             this.update(poToUpdate);
-            System.out.println("FMController: Purchase Order " + poId + " status updated to " + newStatus + " by user " + userId);
+            System.out.println("Purchase Order " + poId + " status updated to " + newStatus + " by user " + userId);
             return true;
         } catch (Exception e) {
-            System.err.println("FMController: Error saving Purchase Order " + poId + " after status update: " + e.getMessage());
+            System.err.println("Error saving Purchase Order " + poId + " after status update: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -286,17 +286,15 @@ public class FMController extends CRUDController<PurchaseOrder> {
     @Override
     public void update(PurchaseOrder purchaseOrder) {
         if (purchaseOrder == null || purchaseOrder.getPoId() == null || purchaseOrder.getPoId().trim().isEmpty()) {
-            System.err.println("FMController.update: Purchase Order or PO ID is null/empty. Cannot update.");
-            return;
+            throw new IllegalArgumentException("FMController.update Purchase Order or PO ID cannot be null for update.");
         }
 
         String poIdToUpdate = purchaseOrder.getPoId();
         boolean headerUpdatedInList = false;
 
-        List<String> headerLines;
         try {
             new FileController(super.filePath);
-            headerLines = new ArrayList<>(FileController.getFile());
+            List<String> headerLines = new ArrayList<>(FileController.getFile());
 
             for (int i = 0; i < headerLines.size(); i++) {
                 String line = headerLines.get(i);
@@ -314,7 +312,7 @@ public class FMController extends CRUDController<PurchaseOrder> {
                         writer.write(line);
                         writer.newLine();
                     }
-                    System.out.println("FMController: PO Header " + poIdToUpdate + " updated successfully using BufferedWriter.");
+                    System.out.println("PO Header " + poIdToUpdate + " updated successfully using BufferedWriter.");
                 } catch (IOException e) {
                     System.err.println("FMController.update: IOException while writing PO header for " + poIdToUpdate + " with BufferedWriter: " + e.getMessage());
                     throw new RuntimeException("Failed to write PO header for " + poIdToUpdate, e);

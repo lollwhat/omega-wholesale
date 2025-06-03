@@ -2,8 +2,6 @@ package view;
 
 import controller.FMController;
 import controller.SupplierController;
-import controller.FileController;
-import controller.SessionController;
 
 import util.table.mappers.PurchaseOrderRowMapper;
 import model.PurchaseOrder;
@@ -11,8 +9,6 @@ import model.PurchaseOrderItem;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -22,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-public class FMPOApprovalView extends JFrame {
+public class FMPOApprovedView extends JFrame {
     private final Color darkBlue = UITheme.DARK_BLUE;
     private final Color mediumBlue = UITheme.MEDIUM_BLUE;
     private final Color lightBlue = UITheme.LIGHT_BLUE;
@@ -37,15 +33,13 @@ public class FMPOApprovalView extends JFrame {
     private SupplierController supplierController;
 
     private final String[] columnNames = {
-            "PO ID", "PR ID", "Notes", "Status", "Created At","Created By", "Updated At", "Updated By","Received At", "Received By", "Actions"
-    };
+            "PO ID", "PR ID", "Notes", "Status", "Created At","Created By",
+            "Updated At", "Updated By","Received At", "Received By"};
     private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
 
-    private static final int STATUS_PENDING = 0;
     private static final int STATUS_APPROVED = 1;
-    private static final int STATUS_CANCELLED = 3;
 
-    public FMPOApprovalView() {
+    public FMPOApprovedView() {
         setTitle("Finance Manager Purchase Order Approval");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -54,12 +48,12 @@ public class FMPOApprovalView extends JFrame {
         poRowMapper = new PurchaseOrderRowMapper();
 
         setLayout(new BorderLayout());
-        add(createFMPOApprovalPanel(), BorderLayout.CENTER);
+        add(createFMPOApprovedPanel(), BorderLayout.CENTER);
         setMinimumSize(new Dimension(1200, 600));
         setLocationRelativeTo(null);
     }
 
-    public JPanel createFMPOApprovalPanel() {
+    public JPanel createFMPOApprovedPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
         mainPanel.setBackground(mediumBlue);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -68,7 +62,7 @@ public class FMPOApprovalView extends JFrame {
         headerPanel.setBackground(mediumBlue);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JLabel titleLabel = new JLabel("Purchase Order Approval");
+        JLabel titleLabel = new JLabel("Approved Purchase Order");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(highlightBlue);
         titleLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -95,7 +89,7 @@ public class FMPOApprovalView extends JFrame {
                 if (poTable != null && poTable.getModel() instanceof DefaultTableModel) {
                     poTableModel = (DefaultTableModel) poTable.getModel();
                 } else {
-                    System.err.println("FMPOApprovalView.refreshTable(): poTableModel is null and table not ready.");
+                    System.err.println("FMApprovedPOView.refreshTable(): poTableModel is null and table not ready.");
                     return;
                 }
             }
@@ -108,10 +102,10 @@ public class FMPOApprovalView extends JFrame {
 
             if (allPoHeaders != null && !allPoHeaders.isEmpty()) {
                 for (PurchaseOrder purchaseOrder : allPoHeaders) {
-                    if (purchaseOrder != null && purchaseOrder.getStatus() == STATUS_PENDING) {
+                    if (purchaseOrder != null && purchaseOrder.getStatus() == STATUS_APPROVED) {
                         String poHeader = purchaseOrder.toCSV();
                         String[] fields = poHeader.split(",", -1);
-                        Object[] rowData = poRowMapper.mapFieldsToRow(fields, columnNames.length - 1);
+                        Object[] rowData = poRowMapper.mapFieldsToRow(fields, columnNames.length);
                         if (rowData != null) {
                             poTableModel.addRow(rowData);
                         }
@@ -151,20 +145,19 @@ public class FMPOApprovalView extends JFrame {
         poTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // PO ID
         poTable.getColumnModel().getColumn(1).setPreferredWidth(80);  // PR ID
         poTable.getColumnModel().getColumn(2).setPreferredWidth(200); // Notes
-        poTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Supplier ID
-        poTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Status
-        poTable.getColumnModel().getColumn(5).setPreferredWidth(150); // Created At
-        poTable.getColumnModel().getColumn(6).setPreferredWidth(80); // Created By
-        poTable.getColumnModel().getColumn(7).setPreferredWidth(150); // Updated At
-        poTable.getColumnModel().getColumn(8).setPreferredWidth(100); // Updated By
-        poTable.getColumnModel().getColumn(9).setPreferredWidth(150); // Received At
-        poTable.getColumnModel().getColumn(10).setPreferredWidth(100);// Received By
-        poTable.getColumnModel().getColumn(6).setPreferredWidth(200);// Actions
+        poTable.getColumnModel().getColumn(3).setPreferredWidth(80);  // Status
+        poTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Created At
+        poTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Created By
+        poTable.getColumnModel().getColumn(6).setPreferredWidth(150); // Updated At
+        poTable.getColumnModel().getColumn(7).setPreferredWidth(100); // Updated By
+        poTable.getColumnModel().getColumn(8).setPreferredWidth(100); // Received At
+        poTable.getColumnModel().getColumn(9).setPreferredWidth(100);// Received By
 
-        FMPOActionButtonPanel actionPanel = new FMPOActionButtonPanel(this.poTable);
-        int actionsColumnModelIndex = poTable.getColumn("Actions").getModelIndex();
-        poTable.getColumnModel().getColumn(actionsColumnModelIndex).setCellRenderer(actionPanel);
-        poTable.getColumnModel().getColumn(actionsColumnModelIndex).setCellEditor(actionPanel);
+
+//        FMPOActionButtonPanel actionPanel = new FMPOActionButtonPanel(this.poTable);
+//        int actionsColumnModelIndex = poTable.getColumn("Actions").getModelIndex();
+//        poTable.getColumnModel().getColumn(actionsColumnModelIndex).setCellRenderer(actionPanel);
+//        poTable.getColumnModel().getColumn(actionsColumnModelIndex).setCellEditor(actionPanel);
 
         poTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -172,7 +165,7 @@ public class FMPOApprovalView extends JFrame {
                 if (e.getClickCount() == 2) {
                     int viewRow = poTable.rowAtPoint(e.getPoint());
                     int viewColumn = poTable.columnAtPoint(e.getPoint());
-                    if (viewRow >= 0 && viewColumn >= 0 && poTable.convertColumnIndexToModel(viewColumn) != actionsColumnModelIndex) {
+//                    if (viewRow >= 0 && viewColumn >= 0 && poTable.convertColumnIndexToModel(viewColumn) != actionsColumnModelIndex) {
                         int modelRow = poTable.convertRowIndexToModel(viewRow);
                         String poId = (String) poTableModel.getValueAt(modelRow, 0);
                         if (poId != null && !poId.trim().isEmpty()) {
@@ -180,7 +173,7 @@ public class FMPOApprovalView extends JFrame {
                         }
                     }
                 }
-            }
+//            }
         });
 
 //        loadPurchaseOrders();
@@ -214,21 +207,21 @@ public class FMPOApprovalView extends JFrame {
 //
 //        if (!poHeader.isEmpty()) {
 //            for (PurchaseOrder purchaseOrder : poHeader) {
-//                if(purchaseOrder.getStatus() == STATUS_PENDING) {
+//                if(purchaseOrder.getStatus() == STATUS_APPROVED) {
 //
-//                Object[] rowData = {
-//                        purchaseOrder.getPoId(),
-//                        purchaseOrder.getPrId(),
-//                        purchaseOrder.getNotes(),
-//                        purchaseOrder.getStatus(),
-//                        purchaseOrder.getCreatedAt(),
-//                        purchaseOrder.getCreatedBy(),
-//                        purchaseOrder.getUpdatedAt(),
-//                        purchaseOrder.getUpdatedBy(),
-//                        purchaseOrder.getReceivedAt() != null ? purchaseOrder.getReceivedAt() : "N/A",
-//                        purchaseOrder.getReceivedBy() != null ? purchaseOrder.getReceivedBy() : "N/A"
-//                };
-//                this.poTableModel.addRow(rowData);
+//                    Object[] rowData = {
+//                            purchaseOrder.getPoId(),
+//                            purchaseOrder.getPrId(),
+//                            purchaseOrder.getNotes(),
+//                            purchaseOrder.getStatus(),
+//                            purchaseOrder.getCreatedAt(),
+//                            purchaseOrder.getCreatedBy(),
+//                            purchaseOrder.getUpdatedAt(),
+//                            purchaseOrder.getUpdatedBy(),
+//                            purchaseOrder.getReceivedAt() != null ? purchaseOrder.getReceivedAt() : "N/A",
+//                            purchaseOrder.getReceivedBy() != null ? purchaseOrder.getReceivedBy() : "N/A"
+//                    };
+//                    this.poTableModel.addRow(rowData);
 //                };
 //            }
 //        } else {
@@ -238,8 +231,8 @@ public class FMPOApprovalView extends JFrame {
 
     private JButton createStyledActionButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.PLAIN, 10));
-        button.setMargin(new Insets(4, 5, 4, 5));
+        button.setFont(new Font("Arial", Font.PLAIN, 11));
+        button.setMargin(new Insets(4, 8, 4, 8));
         button.setForeground(textWhite);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
@@ -249,92 +242,92 @@ public class FMPOApprovalView extends JFrame {
     }
 
 
-    class FMPOActionButtonPanel extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
-        private final JPanel panel;
-        private final JButton approveButton;
-        private final JButton rejectButton;
-        private JTable containingTable;
-        private int currentRow;
-
-        public FMPOActionButtonPanel(JTable table) {
-            this.containingTable = table;
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            panel.setOpaque(true);
-
-            approveButton = createStyledActionButton("Approve");
-            approveButton.setBackground(UITheme.SUCCESS_GREEN);
-            rejectButton = createStyledActionButton("Reject");
-            rejectButton.setBackground(UITheme.ERROR_RED);
-
-//            approveButton.addActionListener(e -> handleApproveOrReject(1)); // 1 for approved
-//            rejectButton.addActionListener(e -> handleApproveOrReject(2));  // 2 for rejected
-
-            approveButton.addActionListener(e -> {
-                fireEditingStopped();
-                // currentRow here is the model row, set by getTableCellEditorComponent
-                String poId = (String) containingTable.getModel().getValueAt(currentRow, 0);
-                int confirm = JOptionPane.showConfirmDialog(getParentFrame(),
-                        "Are you sure you want to APPROVE PO ID: " + poId + "?",
-                        "Confirm Approval", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    handleStatusUpdate(poId, STATUS_APPROVED);
-                }
-            });
-
-            rejectButton.addActionListener(e -> {
-                fireEditingStopped();
-                String poId = (String) containingTable.getModel().getValueAt(currentRow, 0);
-                int confirm = JOptionPane.showConfirmDialog(getParentFrame(),
-                        "Are you sure you want to REJECT (Cancel) PO ID: " + poId + "?",
-                        "Confirm Rejection", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    handleStatusUpdate(poId, STATUS_CANCELLED);
-                }
-            });
-
-            panel.add(approveButton);
-            panel.add(rejectButton);
-        }
-
-        private void handleStatusUpdate(String poId, int newStatus) {
-            try {
-                String fmUserId = SessionController.getInstance().getUserId();
-                // Assuming your FMController has updatePurchaseOrderStatus
-                boolean success = fmController.updatePurchaseOrderStatus(poId, newStatus, fmUserId);
-                if (success) {
-                    String action = (newStatus == STATUS_APPROVED) ? "approved" : "rejected (cancelled)";
-                    JOptionPane.showMessageDialog(getParentFrame(), "PO " + poId + " " + action + " successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    refreshTable();
-                } else {
-                    JOptionPane.showMessageDialog(getParentFrame(), "Failed to update status for PO " + poId + ".", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(getParentFrame(), "An error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            }
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
-            this.currentRow = r;
-            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? darkBlue : new Color(40, 50, 70)));
-            return panel;
-        }
-        @Override
-        public Component getTableCellEditorComponent(JTable tbl, Object val, boolean isSel, int r, int c) {
-            this.currentRow = tbl.convertRowIndexToModel(r);
-            panel.setBackground(tbl.getSelectionBackground()); // Use selection color when cell is edited
-            return panel;
-        }
-        @Override
-        public Object getCellEditorValue() { return ""; }
-
-        @Override
-        public boolean stopCellEditing() {
-            super.stopCellEditing();
-            return true;
-        }
-    }
+//    class FMPOActionButtonPanel extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
+//        private final JPanel panel;
+//        private final JButton approveButton;
+//        private final JButton rejectButton;
+//        private JTable containingTable;
+//        private int currentRow;
+//
+////        public FMPOActionButtonPanel(JTable table) {
+////            this.containingTable = table;
+////            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+////            panel.setOpaque(true);
+////
+////            approveButton = createStyledActionButton("Approve");
+////            approveButton.setBackground(UITheme.SUCCESS_GREEN);
+////            rejectButton = createStyledActionButton("Reject");
+////            rejectButton.setBackground(UITheme.ERROR_RED);
+////
+//////            approveButton.addActionListener(e -> handleApproveOrReject(1)); // 1 for approved
+//////            rejectButton.addActionListener(e -> handleApproveOrReject(2));  // 2 for rejected
+////
+////            approveButton.addActionListener(e -> {
+////                fireEditingStopped();
+////                // currentRow here is the model row, set by getTableCellEditorComponent
+////                String poId = (String) containingTable.getModel().getValueAt(currentRow, 0);
+////                int confirm = JOptionPane.showConfirmDialog(getParentFrame(),
+////                        "Are you sure you want to APPROVE PO ID: " + poId + "?",
+////                        "Confirm Approval", JOptionPane.YES_NO_OPTION);
+////                if (confirm == JOptionPane.YES_OPTION) {
+////                    handleStatusUpdate(poId, STATUS_APPROVED);
+////                }
+////            });
+////
+////            rejectButton.addActionListener(e -> {
+////                fireEditingStopped();
+////                String poId = (String) containingTable.getModel().getValueAt(currentRow, 0);
+////                int confirm = JOptionPane.showConfirmDialog(getParentFrame(),
+////                        "Are you sure you want to REJECT (Cancel) PO ID: " + poId + "?",
+////                        "Confirm Rejection", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+////                if (confirm == JOptionPane.YES_OPTION) {
+////                    handleStatusUpdate(poId, STATUS_CANCELLED);
+////                }
+////            });
+////
+////            panel.add(approveButton);
+////            panel.add(rejectButton);
+////        }
+//
+////        private void handleStatusUpdate(String poId, int newStatus) {
+////            try {
+////                String fmUserId = SessionController.getInstance().getUserId();
+////                // Assuming your FMController has updatePurchaseOrderStatus
+////                boolean success = fmController.updatePurchaseOrderStatus(poId, newStatus, fmUserId);
+////                if (success) {
+////                    String action = (newStatus == STATUS_APPROVED) ? "approved" : "rejected (cancelled)";
+////                    JOptionPane.showMessageDialog(getParentFrame(), "PO " + poId + " " + action + " successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+////                    refreshTable();
+////                } else {
+////                    JOptionPane.showMessageDialog(getParentFrame(), "Failed to update status for PO " + poId + ".", "Error", JOptionPane.ERROR_MESSAGE);
+////                }
+////            } catch (Exception ex) {
+////                JOptionPane.showMessageDialog(getParentFrame(), "An error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+////                ex.printStackTrace();
+////            }
+////        }
+//
+//        @Override
+//        public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isSel, boolean hasFoc, int r, int c) {
+//            this.currentRow = r;
+//            panel.setBackground(isSel ? tbl.getSelectionBackground() : (r % 2 == 0 ? darkBlue : new Color(40, 50, 70)));
+//            return panel;
+//        }
+//        @Override
+//        public Component getTableCellEditorComponent(JTable tbl, Object val, boolean isSel, int r, int c) {
+//            this.currentRow = tbl.convertRowIndexToModel(r);
+//            panel.setBackground(tbl.getSelectionBackground()); // Use selection color when cell is edited
+//            return panel;
+//        }
+//        @Override
+//        public Object getCellEditorValue() { return ""; }
+//
+//        @Override
+//        public boolean stopCellEditing() {
+//            super.stopCellEditing();
+//            return true;
+//        }
+//    }
 
 
     private void showPODetailsPopup(String poId) {
