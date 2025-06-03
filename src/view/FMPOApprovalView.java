@@ -43,6 +43,7 @@ public class FMPOApprovalView extends JFrame {
 
     private static final int STATUS_PENDING = 0;
     private static final int STATUS_APPROVED = 1;
+    private static final int STATUS_RECEIVED = 2;
     private static final int STATUS_CANCELLED = 3;
 
     public FMPOApprovalView() {

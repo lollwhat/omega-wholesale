@@ -3,6 +3,7 @@ package view;
 import controller.FMController;
 import model.PurchaseOrder;
 import model.PurchaseOrderItem;
+import util.table.mappers.PurchaseOrderRowMapper;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -23,8 +24,9 @@ public class FinancePurchaseOrderView extends JFrame {
     private Color textColour = new Color(255, 255, 255);
 
     private JTable purchaseOrderTable;
+    private PurchaseOrderRowMapper poRowMapper;
     private DefaultTableModel purchaseOrderTableModel;
-    private final String[] columnNames = {"PO ID", "PR ID", "Notes", "Supplier", "Status", "Created At", "Created By",
+    private final String[] columnNames = {"PO ID", "PR ID", "Notes", "Status", "Created At", "Created By",
             "Updated At", "Updated By", "Received At", "Received By"};
     private static final String[] PO_STATUS_DIALOG_OPTIONS = {"Processing", "Received", "Cancelled"};
     private static final DecimalFormat CURRENCY_FORMAT = new DecimalFormat("#,##0.00");
@@ -33,6 +35,7 @@ public class FinancePurchaseOrderView extends JFrame {
 
     public FinancePurchaseOrderView() {
         this.fmController = new FMController();
+        this.poRowMapper = new PurchaseOrderRowMapper();
 
         setTitle("View Purchase Orders");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -54,14 +57,15 @@ public class FinancePurchaseOrderView extends JFrame {
         JLabel purchaseOrderTitle = new JLabel("View Purchase Orders");
         purchaseOrderTitle.setForeground(labelColour);
         purchaseOrderTitle.setFont(new Font("Arial", Font.BOLD, 20));
-        headerPanel.add(purchaseOrderTitle, BorderLayout.WEST);
+        purchaseOrderTitle.setHorizontalAlignment(JLabel.CENTER);
+        headerPanel.add(purchaseOrderTitle, BorderLayout.NORTH);
 
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(panelColour);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         tablePanel.add(createTable(), BorderLayout.CENTER);
 
-//        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
         return mainPanel;
@@ -76,7 +80,7 @@ public class FinancePurchaseOrderView extends JFrame {
         };
 
         purchaseOrderTable = new JTable(purchaseOrderTableModel);
-        purchaseOrderTable.setBackground(panelColour);
+        purchaseOrderTable.setBackground(background);
         purchaseOrderTable.setForeground(textColour);
         purchaseOrderTable.setSelectionBackground(lightBlue);
         purchaseOrderTable.setSelectionForeground(textColour);
@@ -88,14 +92,14 @@ public class FinancePurchaseOrderView extends JFrame {
         purchaseOrderTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // PO ID
         purchaseOrderTable.getColumnModel().getColumn(1).setPreferredWidth(80);  // PR ID
         purchaseOrderTable.getColumnModel().getColumn(2).setPreferredWidth(200); // Notes
-        purchaseOrderTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Supplier ID
-        purchaseOrderTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Status
-        purchaseOrderTable.getColumnModel().getColumn(5).setPreferredWidth(150); // Created At
-        purchaseOrderTable.getColumnModel().getColumn(6).setPreferredWidth(100); // Created By
-        purchaseOrderTable.getColumnModel().getColumn(7).setPreferredWidth(150); // Updated At
-        purchaseOrderTable.getColumnModel().getColumn(8).setPreferredWidth(100); // Updated By
-        purchaseOrderTable.getColumnModel().getColumn(9).setPreferredWidth(150); // Received At
-        purchaseOrderTable.getColumnModel().getColumn(10).setPreferredWidth(100);// Received By
+//        purchaseOrderTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Supplier ID
+        purchaseOrderTable.getColumnModel().getColumn(3).setPreferredWidth(80);  // Status
+        purchaseOrderTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Created At
+        purchaseOrderTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Created By
+        purchaseOrderTable.getColumnModel().getColumn(6).setPreferredWidth(150); // Updated At
+        purchaseOrderTable.getColumnModel().getColumn(7).setPreferredWidth(100); // Updated By
+        purchaseOrderTable.getColumnModel().getColumn(8).setPreferredWidth(150); // Received At
+        purchaseOrderTable.getColumnModel().getColumn(9).setPreferredWidth(100);// Received By
 
         purchaseOrderTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -115,7 +119,7 @@ public class FinancePurchaseOrderView extends JFrame {
         loadPurchaseOrders();
 
         JScrollPane scrollPane = new JScrollPane(purchaseOrderTable);
-        scrollPane.getViewport().setBackground(panelColour);
+        scrollPane.getViewport().setBackground(background);
 
         return scrollPane;
     }
@@ -127,6 +131,10 @@ public class FinancePurchaseOrderView extends JFrame {
         }
         if (this.fmController == null) {
             System.err.println("FMController is not initialized.");
+            return;
+        }
+        if(this.poRowMapper == null) {
+            System.err.println("Failed to retrieve purchase orders from controller.");
             return;
         }
 
@@ -147,7 +155,7 @@ public class FinancePurchaseOrderView extends JFrame {
                         purchaseOrder.getPoId(),
                         purchaseOrder.getPrId(),
                         purchaseOrder.getNotes(),
-                        purchaseOrder.getStatus(),
+                        poRowMapper.getStatusString(purchaseOrder.getStatus()),
                         purchaseOrder.getCreatedAt(),
                         purchaseOrder.getCreatedBy(),
                         purchaseOrder.getUpdatedAt(),

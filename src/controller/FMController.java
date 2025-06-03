@@ -1,5 +1,8 @@
 package controller;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import model.PurchaseOrder;
@@ -27,6 +30,10 @@ public class FMController extends CRUDController<PurchaseOrder> {
 
     private static final String PR_ITEMS_FILE_PATH = "data/purchase_requisition_item.txt";
     private static final String PR_HEADER_FILE_PATH = "data/purchase_requisition.txt";
+
+    private static final String APPROVED_DETAILS_FILE = "data/purchase_order.txt";
+    private static final int STATUS_APPROVED = 1;
+
 
     public FMController (){
         super(PO_HEADER_FILE_PATH, EntityType.PURCHASE_ORDER);
@@ -275,6 +282,24 @@ public class FMController extends CRUDController<PurchaseOrder> {
             System.err.println("Error saving Purchase Order " + poId + " after status update: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public void generateApprovedReport(String savePath) throws IOException {
+        Path approvedFilePath = Paths.get(APPROVED_DETAILS_FILE);
+
+        if (!Files.exists(approvedFilePath)) {
+            throw new IOException("File not found.");
+        }
+
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.append("PO ID,Item Code, Item Name,Status,Date\n");
+        for (String line : Files.readAllLines(approvedFilePath)) {
+            reportContent.append(line).append("\n");
+        }
+
+        try (FileWriter writer = new FileWriter(savePath)) {
+            writer.write(reportContent.toString());
         }
     }
 
